@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import { FaGithub, FaStar, FaCodeBranch } from 'react-icons/fa';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // 添加本地项目数据
 const localProjects = [
@@ -73,6 +74,7 @@ export async function getStaticProps() {
 }
 
 export default function Projects({ projects }) {
+  const { translations } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
 
@@ -90,21 +92,23 @@ export default function Projects({ projects }) {
   return (
     <div className="min-h-screen bg-gray-50">
       <Head>
-        <title>项目 | 我的个人网站</title>
+        <title>{translations.projects.title}</title>
         <meta name="description" content="我的开源项目展示" />
       </Head>
 
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">我的项目</h1>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h1 className="text-2xl font-bold mb-6">
+            {translations.projects.title}
+          </h1>
           
           {/* 搜索和筛选 */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <input
               type="text"
-              placeholder="搜索项目..."
+              placeholder={translations.projects.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -187,7 +191,7 @@ export default function Projects({ projects }) {
                       className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
                     >
                       <FaGithub />
-                      查看源码
+                      {translations.projects.viewSource}
                     </Link>
                     {project.homepage && (
                       <Link
@@ -196,7 +200,7 @@ export default function Projects({ projects }) {
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800"
                       >
-                        访问网站
+                        {translations.projects.visitWebsite}
                       </Link>
                     )}
                   </div>
@@ -209,7 +213,7 @@ export default function Projects({ projects }) {
           {filteredProjects.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500 text-lg">
-                没有找到匹配的项目
+                {translations.projects.noResults}
               </p>
             </div>
           )}

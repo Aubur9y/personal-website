@@ -46,18 +46,19 @@ export default function BlogCard({ post, isAdmin }) {
     getCurrentUser();
   }, []);
 
+  // 添加安全检查
   if (!post) {
     return null;
   }
 
-  const articleUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/blog/${post.slug}`;
+  const articleUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/blog/${post?.slug || ''}`;
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
       {/* 文章封面图 */}
       <div className="relative aspect-[16/9] w-full bg-gray-100">
         <ImageWithFallback
-          src={post.coverImage}
+          src={post.coverImage || DEFAULT_COVER}
           fallbackSrc={DEFAULT_COVER}
           alt={post.title}
           fill
@@ -107,7 +108,7 @@ export default function BlogCard({ post, isAdmin }) {
 
         {/* 标签 */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {post.tags.map(tag => (
+          {post.tags?.map(tag => (
             <span key={tag} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
               {translations.blog.tags[tag.toLowerCase()] || tag}
             </span>
@@ -128,9 +129,9 @@ export default function BlogCard({ post, isAdmin }) {
           <ShareButtons title={post.title} url={articleUrl} />
           <div className="flex items-center gap-2">
             {/* 管理员可以编辑所有文章 */}
-            {isAdmin && (
-              <Link
-                href={`/admin/posts/${post.id}/edit`}
+            {isAdmin && post?.slug && (
+              <Link 
+                href={`/admin/posts/edit/${post.slug}`}
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
                 {translations.blog.edit}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { FaSave, FaEdit } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
@@ -16,11 +16,28 @@ import MarkdownContent from '../../components/MarkdownContent';
 import Comments from '../../components/Comments';
 import { connectToDatabase } from '../../lib/db';
 import { isAdmin } from '../../lib/auth';
+import { useLanguage } from '../../contexts/LanguageContext';
+import Image from 'next/image';
 
-export default function BlogPost({ post, isAdmin: isAdminUser }) {
+export default function BlogPost() {
+  const router = useRouter();
+  const { slug } = router.query;
+  const { translations } = useLanguage();
+  const [post, setPost] = useState(null);
+
+  useEffect(() => {
+    if (slug) {
+      const currentPost = blogPosts.find(p => p.slug === slug);
+      if (!currentPost) {
+        router.push('/404');
+        return;
+      }
+      setPost(currentPost);
+    }
+  }, [slug, router]);
+
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(post?.content || '');
-  const router = useRouter();
 
   const handleSave = async () => {
     try {
@@ -43,211 +60,96 @@ export default function BlogPost({ post, isAdmin: isAdminUser }) {
     }
   };
 
-  if (router.isFallback) {
-    return <div>Loading...</div>;
-  }
-
   if (!post) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-100">
+        <Head>
+          <title>加载中... | 博客</title>
+        </Head>
         <Navbar />
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-12">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">404</h1>
-            <p className="text-gray-600 mb-8">文章不存在</p>
-            <Link href="/blog" className="text-blue-600 hover:text-blue-800">
-              返回博客列表
-            </Link>
+            <h1 className="text-2xl text-gray-600">
+              {translations.common.loading}
+            </h1>
           </div>
         </div>
       </div>
     );
   }
 
+  const pageTitle = `${post.title} | 博客`;
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ReadingProgress />
+    <div className="min-h-screen bg-gray-100">
       <Head>
-        <title>{post.title} | 我的个人网站</title>
+        <title>{pageTitle}</title>
         <meta name="description" content={post.excerpt} />
       </Head>
 
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto lg:flex lg:gap-12">
-          {/* 左侧文章内容 */}
-          <div className="flex-1">
-            {/* 文章头部 */}
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <Link href="/blog" className="text-blue-600 hover:text-blue-800">
-                  ← 返回博客列表
-                </Link>
-              </div>
-              
-              <h1 className="text-4xl font-bold text-gray-800 mb-4">{post.title}</h1>
-              
-              {/* 作者信息 */}
-              <div className="flex items-center gap-4 mb-6">
-                {post.author?.avatar && (
-                  <img
-                    src={post.author.avatar}
-                    alt={post.author.name}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                )}
-                <div>
-                  <div className="font-medium">{post.author?.name || '匿名作者'}</div>
-                  {post.author?.bio && (
-                    <div className="text-sm text-gray-600">{post.author.bio}</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6">
-                <span>发布于 {post.date}</span>
-                <span>分类：{post.category}</span>
-                <span>预计阅读时间：{post.readTime} 分钟</span>
-              </div>
-            </div>
-
-            {/* 文章封面图 */}
-            <div className="relative aspect-[21/9] w-full bg-gray-100 rounded-lg overflow-hidden mb-8">
-              <ImageWithFallback
-                src={post.coverImage}
-                fallbackSrc="/images/default-cover.jpg"
-                alt={post.title}
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-
-            {/* 管理按钮组 */}
-            {isAdminUser && (
-              <div className="mb-8 flex justify-end space-x-4">
-                {isEditing ? (
-                  <button
-                    onClick={handleSave}
-                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    <FaSave className="mr-2" />
-                    保存
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <FaEdit className="mr-2" />
-                    编辑
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* 文章内容 */}
-            {isEditing ? (
-              <div className="mb-8">
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="w-full h-[600px] p-4 border rounded font-mono"
-                />
-                <div className="flex justify-end mt-4">
-                  <button
-                    onClick={handleSave}
-                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    <FaSave className="mr-2" />
-                    保存
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="prose prose-lg max-w-none">
-                <MarkdownContent content={content} />
-              </div>
-            )}
-
-            {/* 标签和分享 */}
-            <div className="flex flex-wrap items-center justify-between py-6 border-t border-gray-200">
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag, index) => (
-                  <span 
-                    key={index}
-                    className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-              <ShareButtons 
-                title={post.title} 
-                url={typeof window !== 'undefined' ? window.location.href : ''}
-              />
-            </div>
-
-            {/* 添加评论系统 */}
-            <Comments postSlug={post.slug} />
-
-            {/* 添加上一篇/下一篇导航 */}
-            <PostNavigation currentSlug={post.slug} />
+      <main className="container mx-auto px-4 py-12">
+        <article className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="relative h-64 w-full bg-gray-200">
+            <Image
+              src={post.coverImage || '/images/default-cover.jpg'}
+              alt={post.title}
+              width={1200}
+              height={630}
+              priority
+              className="object-cover"
+            />
           </div>
-
-          {/* 右侧目录 */}
-          <div className="w-64 flex-shrink-0">
-            <TableOfContents />
+          
+          <div className="p-8">
+            <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
+            <div className="flex items-center text-gray-600 mb-8">
+              <span>{new Date(post.date).toLocaleDateString()}</span>
+              <span className="mx-2">•</span>
+              <span>{post.category}</span>
+              {post.readTime && (
+                <>
+                  <span className="mx-2">•</span>
+                  <span>{post.readTime} {translations.blog.readTime}</span>
+                </>
+              )}
+            </div>
+            
+            <div className="prose prose-lg max-w-none">
+              <MarkdownContent content={post.content} />
+            </div>
           </div>
-        </div>
+        </article>
       </main>
     </div>
   );
 }
 
 export async function getStaticPaths() {
-  try {
-    const { db } = await connectToDatabase();
-    const posts = await db.collection('posts').find({}).toArray();
-    
-    return {
-      paths: posts.map(post => ({
-        params: { slug: post.slug }
-      })),
-      fallback: true
-    };
-  } catch (error) {
-    console.error('Error fetching paths:', error);
-    return {
-      paths: [],
-      fallback: true
-    };
-  }
+  const paths = blogPosts.map((post) => ({
+    params: { slug: post.slug },
+  }));
+
+  return {
+    paths,
+    fallback: false,
+  };
 }
 
 export async function getStaticProps({ params }) {
-  try {
-    const { db } = await connectToDatabase();
-    const post = await db.collection('posts').findOne({ slug: params.slug });
+  const post = blogPosts.find((p) => p.slug === params.slug);
 
-    if (!post) {
-      return {
-        notFound: true
-      };
-    }
-
+  if (!post) {
     return {
-      props: {
-        post: JSON.parse(JSON.stringify(post)),
-        isAdmin: true // 在开发环境中暂时设置为 true
-      },
-      revalidate: 60
-    };
-  } catch (error) {
-    console.error('Error fetching post:', error);
-    return {
-      notFound: true
+      notFound: true,
     };
   }
+
+  return {
+    props: {
+      post,
+    },
+    revalidate: 60,
+  };
 } 

@@ -3,13 +3,26 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   
+  // 环境变量配置
+  env: {
+    MONGODB_URI: process.env.MONGODB_URI,
+    MONGODB_DB: process.env.MONGODB_DB,
+    JWT_SECRET: process.env.JWT_SECRET,
+    ADMIN_USERNAME: process.env.ADMIN_USERNAME,
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+    GITHUB_USERNAME: process.env.GITHUB_USERNAME,
+    GITHUB_ACCESS_TOKEN: process.env.GITHUB_ACCESS_TOKEN,
+  },
+  
   // 图片配置
   images: {
+    domains: ['localhost'],
     unoptimized: true,
-    domains: ['localhost', 'api.dicebear.com'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
-  // 禁用优化
+  // 禁用字体优化
   optimizeFonts: false,
   optimizeCss: false,
   poweredByHeader: false,
@@ -64,7 +77,7 @@ const nextConfig = {
   trailingSlash: false,
   exportPathMap: null,
 
-  // 添加这些配置
+  // 构建配置
   distDir: '.next',
   generateBuildId: async () => 'build',
   generateEtags: false,

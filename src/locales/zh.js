@@ -8,6 +8,7 @@ export default {
     logout: '登出'
   },
   common: {
+    siteTitle: '相祺的技术空间',
     edit: '编辑',
     save: '保存',
     lastUpdated: '最后更新：',
@@ -55,8 +56,10 @@ export default {
     }
   },
   projects: {
-    title: '项目',
-    description: '我参与开发的项目集合',
+    title: '我的项目',
+    description: '这里是我的一些项目',
+    searchPlaceholder: '搜索项目...',
+    noResults: '没有找到匹配的项目',
     filters: {
       all: '全部',
       web: '网站',
@@ -70,7 +73,9 @@ export default {
         source: '源代码',
         view: '查看项目'
       }
-    }
+    },
+    viewSource: '查看源码',
+    visitWebsite: '访问网站'
   },
   contact: {
     title: '联系我',
@@ -126,5 +131,19 @@ export default {
     anonymous: '匿名',
     readMore: '阅读更多',
     edit: '编辑'
+  },
+  auth: {
+    login: '登录',
+    register: '注册',
+    loginTitle: '登录账号',
+    registerTitle: '创建新账号',
+    emailOrUsername: '邮箱或用户名',
+    email: '邮箱地址',
+    username: '用户名',
+    password: '密码',
+    loginSuccess: '登录成功！',
+    registerSuccess: '注册成功！',
+    noAccount: '没有账号？点击注册',
+    hasAccount: '已有账号？点击登录'
   }
 }; 

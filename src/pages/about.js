@@ -6,8 +6,7 @@ import { toast } from 'react-hot-toast';
 import { marked } from 'marked';
 import Navbar from '../components/Navbar';
 import { 
-  FaFileDownload, FaGithub, FaLinkedin, FaEnvelope, FaEdit, FaSave,
-  FaCode, FaGraduationCap, FaBriefcase, FaUser, FaTools, FaEnvelopeOpen
+  FaFileDownload, FaGithub, FaLinkedin, FaEnvelope, FaEdit, FaSave
 } from 'react-icons/fa';
 import { connectToDatabase } from '../lib/db';
 import { isAdmin } from '../lib/auth';
@@ -74,7 +73,7 @@ const defaultAbout = {
   en: `
 # 👋 Hi, I'm Xiangqi
 
-I'm a full-stack developer passionate about technology, focusing on machine learning and data engineering, with rich project experience and internships.
+I'm a passionate full-stack developer focused on machine learning and data engineering, with extensive project experience and internships.
 
 ## Education
 
@@ -85,9 +84,9 @@ I'm a full-stack developer passionate about technology, focusing on machine lear
 ### University of Manchester (QS 34)
 - Sep 2021 - Jul 2024
 - BSc in Computer Science
-- Grade: First Class Honours (GPA: 3.7/4.0)
+- First Class Honours (GPA: 3.7/4.0)
 
-## Skills
+## Tech Stack
 
 ### Programming Languages
 - **Python**
@@ -97,11 +96,11 @@ I'm a full-stack developer passionate about technology, focusing on machine lear
 ### Data Science & Machine Learning
 - **Frameworks**: PyTorch, Scikit-learn, TensorFlow
 - **Tools**: Pandas, NumPy, Matplotlib
-- **Domains**: Computer Vision, NLP
+- **Fields**: Computer Vision, NLP
 
 ### Data Engineering & Big Data
 - **Workflow**: Apache Airflow
-- **Database**: MySQL, MongoDB, Redis
+- **Databases**: MySQL, MongoDB, Redis
 - **Big Data**: Spark, Hadoop
 
 ### Development Tools & Frameworks
@@ -117,12 +116,12 @@ I'm a full-stack developer passionate about technology, focusing on machine lear
 ### MCM CHINA
 - IT Intern
 
-### Citrix Solutions
+### Citrix System Solutions
 - Software Development Intern
 
 ## Contact
 
-Feel free to reach out to me via:
+Feel free to reach out to me through:
 
 - **Email**: [qixiang.aubury@gmail.com](mailto:qixiang.aubury@gmail.com)
 - **GitHub**: [Aubur9y](https://github.com/Aubur9y)
@@ -138,29 +137,33 @@ const markdownOptions = {
   headerPrefix: 'heading-'
 };
 
-export default function About({ about, resumePath, isAdmin: isAdminUser, lastUpdated }) {
+export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUpdated }) {
   const { lang, translations } = useLanguage();
   console.log('Admin status:', isAdminUser);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [content, setContent] = useState(about?.content || defaultAbout[lang]);
+  // 分别存储中英文内容
+  const [contentZh, setContentZh] = useState(about?.contentZh || defaultAbout.zh);
+  const [contentEn, setContentEn] = useState(about?.contentEn || defaultAbout.en);
   const [parsedContent, setParsedContent] = useState('');
+  const [showResume, setShowResume] = useState(false);
 
-  useEffect(() => {
-    // 在客户端渲染 Markdown
-    setParsedContent(marked(content || '', {
-      breaks: true,
-      gfm: true,
-      headerIds: true,
-      headerPrefix: 'heading-'
-    }));
-  }, [content]);
+  // 根据当前语言选择对应的简历路径
+  const currentResumePath = resumePaths?.[lang];
+
+  // 根据当前语言选择显示的内容
+  const currentContent = lang === 'zh' ? contentZh : contentEn;
 
   useEffect(() => {
     if (!isEditing) {
-      setContent(defaultAbout[lang]);
+      setContentZh(about?.contentZh || defaultAbout.zh);
+      setContentEn(about?.contentEn || defaultAbout.en);
     }
-  }, [lang, isEditing]);
+  }, [lang, isEditing, about]);
+
+  useEffect(() => {
+    setParsedContent(marked(currentContent || '', markdownOptions));
+  }, [currentContent]);
 
   const handleResumeUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -168,6 +171,7 @@ export default function About({ about, resumePath, isAdmin: isAdminUser, lastUpd
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('language', lang);
 
     try {
       const response = await fetch('/api/upload/resume', {
@@ -177,12 +181,11 @@ export default function About({ about, resumePath, isAdmin: isAdminUser, lastUpd
 
       if (!response.ok) throw new Error('上传失败');
 
-      const data = await response.json();
-      toast.success('简历上传成功');
+      toast.success(translations.about.resumeUploadSuccess);
       window.location.reload();
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('简历上传失败');
+      toast.error(translations.about.resumeUploadError);
     }
   };
 
@@ -193,17 +196,35 @@ export default function About({ about, resumePath, isAdmin: isAdminUser, lastUpd
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({
+          contentZh,
+          contentEn,
+          language: lang
+        }),
       });
 
-      if (!response.ok) throw new Error('保存失败');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || '保存失败');
+      }
 
+      // 保存成功后更新状态
       toast.success('保存成功');
       setIsEditing(false);
-      window.location.reload();
+
+      // 更新 about 对象
+      if (about) {
+        about.contentZh = contentZh;
+        about.contentEn = contentEn;
+        about.updatedAt = new Date().toISOString();
+      }
+
+      // 根据当前语言更新显示的内容
+      const newContent = lang === 'zh' ? contentZh : contentEn;
+      setParsedContent(marked(newContent || '', markdownOptions));
     } catch (error) {
       console.error('Save error:', error);
-      toast.error('保存失败');
+      toast.error(error.message || '保存失败');
     }
   };
 
@@ -229,7 +250,7 @@ export default function About({ about, resumePath, isAdmin: isAdminUser, lastUpd
                   width={200}
                   height={200}
                   className="h-48 w-full object-cover md:h-full md:w-48"
-                  priority={true}
+                  priority
                   sizes="(max-width: 768px) 100vw, 200px"
                 />
               </div>
@@ -303,45 +324,63 @@ export default function About({ about, resumePath, isAdmin: isAdminUser, lastUpd
               </div>
             )}
 
-            {/* 简历按钮组 */}
-            {resumePath && (
-              <div className="mb-8 flex justify-end space-x-4">
-                <Link
-                  href="/resume"
-                  className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  <FaFileDownload className="mr-2" />
-                  {translations.about.viewResume}
-                </Link>
-                <Link
-                  href={resumePath}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <FaFileDownload className="mr-2" />
-                  {translations.about.downloadResume}
-                </Link>
-                {isAdminUser && (
-                  <label className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
+            {/* 简历按钮组和预览 */}
+            {currentResumePath && (
+              <>
+                <div className="mb-4 flex justify-end space-x-4">
+                  <button
+                    onClick={() => setShowResume(!showResume)}
+                    className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  >
                     <FaFileDownload className="mr-2" />
-                    {translations.about.uploadResume}
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept=".pdf"
-                      onChange={handleResumeUpload}
+                    {showResume ? translations.about.hideResume : translations.about.viewResume}
+                  </button>
+                  <Link
+                    href={currentResumePath}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <FaFileDownload className="mr-2" />
+                    {translations.about.downloadResume}
+                  </Link>
+                  {isAdminUser && (
+                    <label className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
+                      <FaFileDownload className="mr-2" />
+                      {translations.about.uploadResume}
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf"
+                        onChange={handleResumeUpload}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {showResume && (
+                  <div className="mb-8 bg-white rounded-lg shadow-lg overflow-hidden">
+                    <iframe
+                      src={`${currentResumePath}#toolbar=0&navpanes=0&scrollbar=0`}
+                      className="w-full h-[800px]"
+                      style={{ border: 'none' }}
                     />
-                  </label>
+                  </div>
                 )}
-              </div>
+              </>
             )}
 
             {/* 内容区域 */}
             {isEditing ? (
               <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
+                value={lang === 'zh' ? contentZh : contentEn}
+                onChange={(e) => {
+                  if (lang === 'zh') {
+                    setContentZh(e.target.value);
+                  } else {
+                    setContentEn(e.target.value);
+                  }
+                }}
                 className="w-full h-[600px] p-4 border rounded font-mono"
               />
             ) : (
@@ -381,11 +420,13 @@ export async function getStaticProps() {
   try {
     const { db } = await connectToDatabase();
     if (!db) {
-      console.error('Database connection failed');
       return {
         props: {
-          about: { content: defaultAbout.zh },
-          resumePath: null,
+          about: { contentZh: defaultAbout.zh, contentEn: defaultAbout.en },
+          resumePaths: {
+            zh: process.env.RESUME_PATH_ZH,
+            en: process.env.RESUME_PATH_EN
+          },
           lastUpdated: null,
           isAdmin: false
         },
@@ -393,14 +434,15 @@ export async function getStaticProps() {
       };
     }
 
-    // 获取数据
     const about = await db.collection('about').findOne({});
-    const resumeInfo = await db.collection('settings').findOne({ key: 'resume' });
     
     return {
       props: {
-        about: about ? JSON.parse(JSON.stringify(about)) : { content: defaultAbout.zh },
-        resumePath: resumeInfo?.path || null,
+        about: about ? JSON.parse(JSON.stringify(about)) : { contentZh: defaultAbout.zh, contentEn: defaultAbout.en },
+        resumePaths: {
+          zh: process.env.RESUME_PATH_ZH,
+          en: process.env.RESUME_PATH_EN
+        },
         lastUpdated: about?.updatedAt ? new Date(about.updatedAt).toLocaleDateString() : null,
         isAdmin: true
       },
@@ -410,8 +452,11 @@ export async function getStaticProps() {
     console.error('Error in getStaticProps:', error);
     return {
       props: {
-        about: { content: defaultAbout.zh },
-        resumePath: null,
+        about: { contentZh: defaultAbout.zh, contentEn: defaultAbout.en },
+        resumePaths: {
+          zh: process.env.RESUME_PATH_ZH,
+          en: process.env.RESUME_PATH_EN
+        },
         lastUpdated: null,
         isAdmin: false
       },

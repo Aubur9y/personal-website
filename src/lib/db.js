@@ -1,67 +1,76 @@
 import { MongoClient } from 'mongodb';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-const MONGODB_DB = process.env.MONGODB_DB;
-
 // 只在服务器端检查环境变量
 if (typeof window === 'undefined') {
-  if (!MONGODB_URI) {
+  if (!process.env.MONGODB_URI) {
     throw new Error('请在环境变量中定义 MONGODB_URI');
   }
-
-  if (!MONGODB_DB) {
+  if (!process.env.MONGODB_DB) {
     throw new Error('请在环境变量中定义 MONGODB_DB');
   }
 }
+
+const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_DB = process.env.MONGODB_DB;
 
 let cachedClient = null;
 let cachedDb = null;
 
 export async function connectToDatabase() {
+  // 如果已经有缓存的连接，直接返回
+  if (cachedClient && cachedDb) {
+    return { client: cachedClient, db: cachedDb };
+  }
+
+  // 客户端不需要连接数据库
+  if (typeof window !== 'undefined') {
+    return { client: null, db: null };
+  }
+
   try {
-    // 客户端不需要连接数据库
-    if (typeof window !== 'undefined') {
-      return { client: null, db: null };
-    }
-
-    if (cachedClient && cachedDb) {
-      return { client: cachedClient, db: cachedDb };
-    }
-
-    if (!MONGODB_URI) {
-      throw new Error('MongoDB URI is undefined');
-    }
-
-    // 移除已弃用的选项
+    // 创建新的连接
     const client = await MongoClient.connect(MONGODB_URI, {
-      maxPoolSize: 1
+      maxPoolSize: 10
     });
 
     const db = client.db(MONGODB_DB);
 
-    // 验证连接并初始化数据
-    await db.command({ ping: 1 });
-    console.log("Successfully connected to MongoDB.");
-
-    // 初始化 about 集合的默认数据
-    const aboutCollection = db.collection('about');
-    const existingAbout = await aboutCollection.findOne({});
-    
-    if (!existingAbout) {
-      await aboutCollection.insertOne({
-        content: defaultAbout,
-        updatedAt: new Date().toISOString()
-      });
-      console.log("Initialized default about content");
-    }
-
+    // 缓存连接
     cachedClient = client;
     cachedDb = db;
 
+    console.log('Successfully connected to MongoDB.');
     return { client, db };
   } catch (error) {
     console.error('MongoDB connection error:', error);
+    throw new Error('无法连接到数据库');
+  }
+}
+
+// 添加关闭连接的函数
+export async function closeConnection() {
+  try {
+    if (cachedClient) {
+      await cachedClient.close();
+      cachedClient = null;
+      cachedDb = null;
+      console.log('Database connection closed.');
+    }
+  } catch (error) {
+    console.error('Error closing database connection:', error);
     throw error;
+  }
+}
+
+// 添加健康检查函数
+export async function checkConnection() {
+  try {
+    const { db } = await connectToDatabase();
+    await db.command({ ping: 1 });
+    return true;
+  } catch (error) {
+    console.error('Database health check failed:', error);
+    return false;
   }
 }
 

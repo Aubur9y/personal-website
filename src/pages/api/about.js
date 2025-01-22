@@ -12,8 +12,8 @@ export default async function handler(req, res) {
       return res.status(401).json({ message: '未授权' });
     }
 
-    const { content } = req.body;
-    if (!content) {
+    const { contentZh, contentEn } = req.body;
+    if (!contentZh || !contentEn) {
       return res.status(400).json({ message: '内容不能为空' });
     }
 
@@ -24,7 +24,8 @@ export default async function handler(req, res) {
       {},  // 空条件表示更新第一个文档
       { 
         $set: { 
-          content,
+          contentZh,
+          contentEn,
           updatedAt: new Date().toISOString()
         } 
       },

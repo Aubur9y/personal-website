@@ -1,14 +1,54 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import { FaUser, FaCode, FaBook, FaArrowRight, FaEnvelope, FaGithub, FaLinkedin, FaWeixin } from 'react-icons/fa';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function Home() {
-  const [hoveredCard, setHoveredCard] = useState(null);
-  const { translations } = useLanguage();
+// 定义动画变体
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.3
+    }
+  }
+};
 
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: { scale: 0.8, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      duration: 0.5
+    }
+  },
+  hover: {
+    scale: 1.05,
+    transition: {
+      duration: 0.2
+    }
+  }
+};
+
+export default function Home() {
+  const { translations } = useLanguage();
+  
   const cards = [
     {
       id: 'about',
@@ -24,7 +64,7 @@ export default function Home() {
       description: '探索我的开源项目和技术实践',
       icon: FaCode,
       href: '/projects',
-      color: 'from-purple-500 via-blue-500 to-indigo-500',
+      color: 'from-blue-500 via-teal-500 to-emerald-500',
     },
     {
       id: 'blog',
@@ -32,37 +72,61 @@ export default function Home() {
       description: '分享我的技术见解和学习心得',
       icon: FaBook,
       href: '/blog',
-      color: 'from-blue-500 via-teal-500 to-emerald-500',
+      color: 'from-orange-500 via-red-500 to-purple-500',
     },
   ];
 
   return (
     <div className="min-h-screen bg-gray-900">
       <Head>
-        <title>相祺的个人网站</title>
-        <meta name="description" content="欢迎来到我的个人网站，这里展示了我的项目、博客和个人简介" />
+        <title>{translations.common.siteTitle}</title>
+        <meta name="description" content={translations.home.hero.description} />
       </Head>
 
       <Navbar />
-
+      
       <main className="container mx-auto px-4 py-12">
-        <div className="text-center mb-16">
-          <h1 className="text-6xl font-bold mb-6">
+        {/* Hero Section */}
+        <motion.div 
+          className="text-center mb-16"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.h1 
+            className="text-6xl font-bold mb-6"
+            variants={itemVariants}
+          >
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
               {translations.home.hero.title}
             </span>
-          </h1>
-          <h2 className="text-2xl font-medium mb-12 bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
-            {translations.home.cards.slogan}
-          </h2>
-        </div>
+          </motion.h1>
+          <motion.h2 
+            className="text-2xl text-gray-300 mb-4"
+            variants={itemVariants}
+          >
+            {translations.home.hero.subtitle}
+          </motion.h2>
+          <motion.p 
+            className="text-xl text-gray-400 mb-8"
+            variants={itemVariants}
+          >
+            {translations.home.hero.description}
+          </motion.p>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {cards.map((card, index) => (
-            <Link key={card.id} href={card.href} className="block transform-gpu">
-              <div
-                className="cursor-pointer"
-              >
+        {/* Cards Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          {cards.map((card) => (
+            <motion.div
+              key={card.id}
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              whileHover="hover"
+              className="transform-gpu"
+            >
+              <Link href={card.href} className="block">
                 <div className={`
                   relative h-80 rounded-2xl p-8
                   bg-gradient-to-br ${card.color}
@@ -70,6 +134,8 @@ export default function Home() {
                   backdrop-blur-sm bg-opacity-90
                   border border-white/10
                   group
+                  hover:shadow-xl
+                  transition-shadow
                 `}>
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-transparent" />
                   <div className="relative z-10 h-full flex flex-col text-white">
@@ -86,10 +152,22 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </motion.div>
           ))}
         </div>
+
+        {/* Slogan Section */}
+        <motion.div 
+          className="text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+        >
+          <h2 className="text-2xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+            {translations.home.cards.slogan}
+          </h2>
+        </motion.div>
 
         <div
           className="text-center mt-20"

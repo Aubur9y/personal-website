@@ -39,8 +39,8 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="text-2xl font-bold text-gray-800">
-              MyBlog
+            <Link href="/" className="text-2xl font-bold text-gray-800 hover:text-blue-600 transition-colors">
+              {translations.common.siteTitle}
             </Link>
           </div>
 

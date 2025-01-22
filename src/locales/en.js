@@ -8,6 +8,7 @@ export default {
     logout: 'Logout'
   },
   common: {
+    siteTitle: "Qi Xiang's Tech Space",
     edit: 'Edit',
     save: 'Save',
     lastUpdated: 'Last Updated:',
@@ -20,7 +21,7 @@ export default {
   },
   home: {
     hero: {
-      title: "Hi, I'm Xiangqi",
+      title: "Hi, I'm Qi Xiang",
       subtitle: "Full Stack Developer & ML Engineer",
       description: "I build things for the web and explore AI technologies"
     },
@@ -55,8 +56,10 @@ export default {
     }
   },
   projects: {
-    title: 'Projects',
-    description: "A collection of projects I have worked on",
+    title: 'My Projects',
+    description: 'Here are some of my projects',
+    searchPlaceholder: 'Search projects...',
+    noResults: 'No projects found',
     filters: {
       all: 'All',
       web: 'Web',
@@ -70,7 +73,9 @@ export default {
         source: 'Source Code',
         view: 'View Project'
       }
-    }
+    },
+    viewSource: 'View Source',
+    visitWebsite: 'Visit Website'
   },
   about: {
     pageTitle: 'About Me | My Personal Website',
@@ -189,5 +194,19 @@ export default {
     anonymous: 'Anonymous',
     readMore: 'Read More',
     edit: 'Edit'
+  },
+  auth: {
+    login: 'Login',
+    register: 'Register',
+    loginTitle: 'Sign in to your account',
+    registerTitle: 'Create a new account',
+    emailOrUsername: 'Email or username',
+    email: 'Email address',
+    username: 'Username',
+    password: 'Password',
+    loginSuccess: 'Login successful!',
+    registerSuccess: 'Registration successful!',
+    noAccount: 'No account? Register',
+    hasAccount: 'Already have an account? Login'
   }
 }; 
