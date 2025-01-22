@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { connectToDatabase } from '../../lib/db';
 import { isAdmin } from '../../lib/auth';
+import Link from 'next/link';
 
 export default function ManagePosts({ posts: initialPosts = [] }) {
   const [posts, setPosts] = useState(initialPosts);
@@ -65,20 +66,20 @@ export default function ManagePosts({ posts: initialPosts = [] }) {
                       {new Date(post.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => router.push(`/blog/edit/${post.slug}`)}
-                      className="p-2 text-blue-600 hover:text-blue-800"
-                      title={translations.common.edit}
+                  <div className="flex items-center space-x-2">
+                    <Link
+                      href={`/blog/edit/${post.slug}`}
+                      className="inline-flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 rounded"
                     >
-                      <FaEdit size={20} />
-                    </button>
+                      <FaEdit className="mr-1" />
+                      {translations.blog.edit}
+                    </Link>
                     <button
                       onClick={() => handleDelete(post.slug)}
-                      className="p-2 text-red-600 hover:text-red-800"
-                      title={translations.blog.delete}
+                      className="inline-flex items-center px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-600 hover:border-red-800 rounded"
                     >
-                      <FaTrash size={20} />
+                      <FaTrash className="mr-1" />
+                      {translations.blog.delete}
                     </button>
                   </div>
                 </div>
