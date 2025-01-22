@@ -5,13 +5,14 @@ const nextConfig = {
   
   // 环境变量配置
   env: {
-    MONGODB_URI: process.env.MONGODB_URI,
-    MONGODB_DB: process.env.MONGODB_DB,
-    JWT_SECRET: process.env.JWT_SECRET,
-    ADMIN_USERNAME: process.env.ADMIN_USERNAME,
-    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
-    GITHUB_USERNAME: process.env.GITHUB_USERNAME,
-    GITHUB_ACCESS_TOKEN: process.env.GITHUB_ACCESS_TOKEN,
+    MONGODB_URI: process.env.MONGODB_URI || '',
+    MONGODB_DB: process.env.MONGODB_DB || '',
+    JWT_SECRET: process.env.JWT_SECRET || '',
+    ADMIN_USERNAME: process.env.ADMIN_USERNAME || '',
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || '',
+    GITHUB_USERNAME: process.env.GITHUB_USERNAME || '',
+    GITHUB_ACCESS_TOKEN: process.env.GITHUB_ACCESS_TOKEN || '',
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || 'https://your-domain.com',
   },
   
   // 图片配置

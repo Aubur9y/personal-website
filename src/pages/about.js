@@ -11,6 +11,7 @@ import {
 import { connectToDatabase } from '../lib/db';
 import { isAdmin } from '../lib/auth';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useRouter } from 'next/router';
 
 const defaultAbout = {
   zh: `
@@ -139,6 +140,7 @@ const markdownOptions = {
 
 export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUpdated }) {
   const { lang, translations } = useLanguage();
+  const router = useRouter();
   console.log('Admin status:', isAdminUser);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -165,34 +167,30 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
     setParsedContent(marked(currentContent || '', markdownOptions));
   }, [currentContent]);
 
-  const handleResumeUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('language', lang);
-
+  const handleResumeUpload = async (event) => {
     try {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
       const response = await fetch('/api/upload/resume', {
         method: 'POST',
+        credentials: 'include',
         body: formData,
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || '上传失败');
+        throw new Error(error.error || '上传失败');
       }
 
       const data = await response.json();
       toast.success('简历上传成功');
       
-      // 更新当前显示的简历路径
-      if (lang === 'zh') {
-        resumePaths.zh = data.path;
-      } else {
-        resumePaths.en = data.path;
-      }
+      // 刷新页面以显示新上传的简历
+      router.reload();
     } catch (error) {
       console.error('Upload error:', error);
       toast.error(error.message || '上传失败');

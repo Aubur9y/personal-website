@@ -24,7 +24,7 @@ const localProjects = [
 
 export default function Projects({ initialProjects = [] }) {
   const { translations, isLoading: isLangLoading } = useLanguage();
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -32,15 +32,26 @@ export default function Projects({ initialProjects = [] }) {
     const fetchProjects = async () => {
       try {
         setIsLoading(true);
-        // 如果没有初始项目数据，则使用本地数据
-        if (initialProjects.length === 0) {
+        if (initialProjects.length > 0) {
+          setProjects(initialProjects);
+        } else {
+          // 如果没有初始数据，使用本地数据
+          const localProjects = [
+            {
+              name: "个人博客系统",
+              description: "使用 Next.js、Tailwind CSS 和 MongoDB 构建的个人博客系统",
+              url: "https://github.com/yourusername/blog",
+              language: "JavaScript",
+              stars: 0,
+              forks: 0,
+            },
+            // 可以添加更多本地项目数据
+          ];
           setProjects(localProjects);
         }
       } catch (error) {
         console.error('Error fetching projects:', error);
         setError(error.message);
-        // 发生错误时使用本地数据
-        setProjects(localProjects);
       } finally {
         setIsLoading(false);
       }
@@ -142,52 +153,54 @@ export default function Projects({ initialProjects = [] }) {
 
 export async function getStaticProps() {
   try {
-    // 如果有 GitHub token 就获取 GitHub 数据
-    if (process.env.GITHUB_ACCESS_TOKEN) {
-      const headers = {
-        Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`,
-        'User-Agent': 'Next.js',
-      };
-
-      const username = process.env.GITHUB_USERNAME;
-      const response = await fetch(
-        `https://api.github.com/users/${username}/repos?sort=updated&per_page=100`,
-        { headers }
-      );
-
-      if (!response.ok) {
-        throw new Error('GitHub API request failed');
-      }
-
-      const repos = await response.json();
-      
-      const projects = repos
-        .filter(repo => !repo.fork && !repo.private)
-        .map(repo => ({
-          id: repo.id,
-          name: repo.name,
-          description: repo.description,
-          url: repo.html_url,
-          homepage: repo.homepage,
-          language: repo.language,
-          stars: repo.stargazers_count,
-          forks: repo.forks_count,
-          topics: repo.topics || [],
-          updatedAt: repo.updated_at,
-        }));
-
+    if (!process.env.GITHUB_ACCESS_TOKEN || !process.env.GITHUB_USERNAME) {
+      console.log('GitHub credentials not found, using local data');
       return {
-        props: { initialProjects: projects },
-        revalidate: 3600,
+        props: { initialProjects: [] },
+        revalidate: 3600
       };
     }
+
+    const headers = {
+      Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`,
+      'User-Agent': 'Next.js',
+    };
+
+    const response = await fetch(
+      `https://api.github.com/users/${process.env.GITHUB_USERNAME}/repos?sort=updated&per_page=100`,
+      { headers }
+    );
+
+    if (!response.ok) {
+      throw new Error('GitHub API request failed');
+    }
+
+    const repos = await response.json();
+    
+    const projects = repos
+      .filter(repo => !repo.fork && !repo.private)
+      .map(repo => ({
+        id: repo.id,
+        name: repo.name,
+        description: repo.description || '',
+        url: repo.html_url,
+        homepage: repo.homepage || '',
+        language: repo.language || 'Unknown',
+        stars: repo.stargazers_count,
+        forks: repo.forks_count,
+        topics: repo.topics || [],
+        updatedAt: repo.updated_at,
+      }));
+
+    return {
+      props: { initialProjects: projects },
+      revalidate: 3600,
+    };
   } catch (error) {
     console.error('Error in getStaticProps:', error);
+    return {
+      props: { initialProjects: [] },
+      revalidate: 3600,
+    };
   }
-
-  // 如果获取失败或没有 token，返回空数组
-  return {
-    props: { initialProjects: [] },
-    revalidate: 3600,
-  };
 } 
