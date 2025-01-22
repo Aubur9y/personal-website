@@ -24,18 +24,20 @@ const nextConfig = {
         fs: false,
         dns: false,
         child_process: false,
+        'timers/promises': false,
         'mongodb-client-encryption': false,
       };
-    }
 
-    // 忽略这些原生模块
-    config.externals = [...(config.externals || []), {
-      'utf-8-validate': 'commonjs utf-8-validate',
-      'bufferutil': 'commonjs bufferutil',
-      'kerberos': 'commonjs kerberos',
-      'snappy': 'commonjs snappy',
-      '@mongodb-js/zstd': 'commonjs @mongodb-js/zstd',
-    }];
+      // 忽略这些原生模块
+      config.externals = [...(config.externals || []), {
+        'utf-8-validate': 'commonjs utf-8-validate',
+        'bufferutil': 'commonjs bufferutil',
+        'kerberos': 'commonjs kerberos',
+        'snappy': 'commonjs snappy',
+        '@mongodb-js/zstd': 'commonjs @mongodb-js/zstd',
+        'mongodb-client-encryption': 'commonjs mongodb-client-encryption',
+      }];
+    }
 
     return config;
   },
