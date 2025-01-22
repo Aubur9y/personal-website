@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@octokit/rest": "^21.1.0",
     "@tailwindcss/typography": "^0.5.10",
     "autoprefixer": "^10.4.17",
     "bcryptjs": "^2.4.3",

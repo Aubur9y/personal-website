@@ -1,206 +1,165 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Image from 'next/image';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { FaStar, FaCodeBranch, FaGithub, FaExternalLinkAlt } from 'react-icons/fa';
 import Navbar from '../components/Navbar';
-import { FaGithub, FaStar, FaCodeBranch } from 'react-icons/fa';
 import { useLanguage } from '../contexts/LanguageContext';
 
-// 添加本地项目数据作为后备
-const localProjects = [
-  {
-    id: 1,
-    name: "个人博客系统",
-    description: "使用 Next.js、Tailwind CSS 和 MongoDB 构建的个人博客系统",
-    url: "https://github.com/yourusername/blog",
-    homepage: "https://your-blog.com",
-    language: "JavaScript",
-    stars: 0,
-    forks: 0,
-    topics: ["next.js", "react", "tailwind", "mongodb"],
-    updatedAt: "2024-03-15"
+// 动画配置
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
   }
-];
+};
 
-export default function Projects({ initialProjects = [] }) {
-  const { translations, isLoading: isLangLoading } = useLanguage();
-  const [projects, setProjects] = useState([]);
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
+
+export default function Projects() {
+  const { lang, translations } = useLanguage();
+  const [repos, setRepos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchProjects = async () => {
+    const fetchRepos = async () => {
       try {
-        setIsLoading(true);
-        if (initialProjects.length > 0) {
-          setProjects(initialProjects);
-        } else {
-          // 如果没有初始数据，使用本地数据
-          const localProjects = [
-            {
-              name: "个人博客系统",
-              description: "使用 Next.js、Tailwind CSS 和 MongoDB 构建的个人博客系统",
-              url: "https://github.com/yourusername/blog",
-              language: "JavaScript",
-              stars: 0,
-              forks: 0,
-            },
-            // 可以添加更多本地项目数据
-          ];
-          setProjects(localProjects);
-        }
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-        setError(error.message);
+        const response = await fetch('/api/github/repos');
+        if (!response.ok) throw new Error('获取项目失败');
+        const data = await response.json();
+        setRepos(data.repos);
+      } catch (err) {
+        setError(err.message);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProjects();
-  }, [initialProjects]);
+    fetchRepos();
+  }, []);
 
-  // 如果语言还在加载中，显示加载状态
-  if (isLangLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center text-red-600">
-            {error}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // 语言标签的颜色映射
+  const languageColors = {
+    JavaScript: 'bg-yellow-100 text-yellow-800',
+    TypeScript: 'bg-blue-100 text-blue-800',
+    Python: 'bg-green-100 text-green-800',
+    Java: 'bg-red-100 text-red-800',
+    'C++': 'bg-purple-100 text-purple-800',
+    Go: 'bg-cyan-100 text-cyan-800',
+    Rust: 'bg-orange-100 text-orange-800',
+    default: 'bg-gray-100 text-gray-800'
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Head>
-        <title>{translations?.projects?.title || '项目'} | {translations?.common?.siteTitle || '个人网站'}</title>
+        <title>{translations?.projects?.title || '项目'}</title>
+        <meta 
+          name="description" 
+          content={translations?.projects?.description || '我的开源项目展示'} 
+        />
       </Head>
 
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center mb-8">
-          {translations?.projects?.title || '我的项目'}
-        </h1>
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-4xl font-bold text-gray-900 mb-8">
+            {translations?.projects?.title || '我的项目'}
+          </h1>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
-              <div
-                key={project.id}
-                className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-              >
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold mb-2">
-                    <Link
-                      href={project.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-blue-600 transition-colors"
-                    >
-                      {project.name}
-                    </Link>
-                  </h2>
-                  
-                  <p className="text-gray-600 mb-4 line-clamp-2">
-                    {project.description}
-                  </p>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center text-red-600 py-8">
+              {error}
+            </div>
+          ) : (
+            <motion.div
+              variants={container}
+              initial="hidden"
+              animate="show"
+              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            >
+              {repos.map((repo) => (
+                <motion.div
+                  key={repo.id}
+                  variants={item}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                >
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        {repo.name}
+                      </h2>
+                      <div className="flex items-center space-x-4">
+                        <a
+                          href={repo.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-600 hover:text-gray-900 transition-colors"
+                        >
+                          <FaGithub size={20} />
+                        </a>
+                        {repo.homepage && (
+                          <a
+                            href={repo.homepage}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gray-600 hover:text-gray-900 transition-colors"
+                          >
+                            <FaExternalLinkAlt size={18} />
+                          </a>
+                        )}
+                      </div>
+                    </div>
 
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    {project.language && (
-                      <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-gray-400"></span>
-                        {project.language}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <FaStar className="text-yellow-400" />
-                      {project.stars}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FaCodeBranch className="text-gray-400" />
-                      {project.forks}
-                    </span>
+                    <p className="text-gray-600 mb-4 h-12 line-clamp-2">
+                      {repo.description || (lang === 'zh' ? '暂无描述' : 'No description available')}
+                    </p>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {repo.language && (
+                        <span className={`px-2 py-1 rounded-full text-sm ${languageColors[repo.language] || languageColors.default}`}>
+                          {repo.language}
+                        </span>
+                      )}
+                      {repo.topics?.slice(0, 3).map(topic => (
+                        <span key={topic} className="px-2 py-1 bg-blue-50 text-blue-600 rounded-full text-sm">
+                          {topic}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      <div className="flex items-center">
+                        <FaStar className="mr-1 text-yellow-400" />
+                        <span>{repo.stars}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <FaCodeBranch className="mr-1" />
+                        <span>{repo.forks}</span>
+                      </div>
+                      <div className="text-gray-500">
+                        {new Date(repo.updatedAt).toLocaleDateString()}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </div>
       </main>
     </div>
   );
-}
-
-export async function getStaticProps() {
-  try {
-    if (!process.env.GITHUB_ACCESS_TOKEN || !process.env.GITHUB_USERNAME) {
-      console.log('GitHub credentials not found, using local data');
-      return {
-        props: { initialProjects: [] },
-        revalidate: 3600
-      };
-    }
-
-    const headers = {
-      Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`,
-      'User-Agent': 'Next.js',
-    };
-
-    const response = await fetch(
-      `https://api.github.com/users/${process.env.GITHUB_USERNAME}/repos?sort=updated&per_page=100`,
-      { headers }
-    );
-
-    if (!response.ok) {
-      throw new Error('GitHub API request failed');
-    }
-
-    const repos = await response.json();
-    
-    const projects = repos
-      .filter(repo => !repo.fork && !repo.private)
-      .map(repo => ({
-        id: repo.id,
-        name: repo.name,
-        description: repo.description || '',
-        url: repo.html_url,
-        homepage: repo.homepage || '',
-        language: repo.language || 'Unknown',
-        stars: repo.stargazers_count,
-        forks: repo.forks_count,
-        topics: repo.topics || [],
-        updatedAt: repo.updated_at,
-      }));
-
-    return {
-      props: { initialProjects: projects },
-      revalidate: 3600,
-    };
-  } catch (error) {
-    console.error('Error in getStaticProps:', error);
-    return {
-      props: { initialProjects: [] },
-      revalidate: 3600,
-    };
-  }
 } 
