@@ -134,7 +134,12 @@ export default {
     authorPrefix: '作者',
     anonymous: '匿名',
     readMore: '阅读更多',
-    edit: '编辑'
+    edit: '编辑',
+    delete: '删除',
+    deleteConfirm: '确定要删除这篇文章吗？此操作不可撤销。',
+    deleteSuccess: '文章删除成功',
+    deleteError: '删除文章失败',
+    newPost: '新建文章'
   },
   auth: {
     login: '登录',

@@ -197,7 +197,12 @@ export default {
     authorPrefix: 'By',
     anonymous: 'Anonymous',
     readMore: 'Read More',
-    edit: 'Edit'
+    edit: 'Edit',
+    delete: 'Delete',
+    deleteConfirm: 'Are you sure you want to delete this post? This action cannot be undone.',
+    deleteSuccess: 'Post deleted successfully',
+    deleteError: 'Failed to delete post',
+    newPost: 'New Post'
   },
   auth: {
     login: 'Login',
