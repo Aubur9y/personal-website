@@ -53,6 +53,10 @@ export default {
       wechat: "WeChat",
       email: "Email",
       linkedin: "LinkedIn"
+    },
+    intro: {
+      title: 'Computer Science Student & Tech Enthusiast',
+      description: 'I am a Computer Science student passionate about AI and emerging technologies. Focused on full-stack development while actively exploring machine learning and data science.'
     }
   },
   projects: {

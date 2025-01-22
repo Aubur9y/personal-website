@@ -53,6 +53,10 @@ export default {
       wechat: "微信",
       email: "邮箱",
       linkedin: "领英"
+    },
+    intro: {
+      title: '计算机科学学生 & 技术爱好者',
+      description: '我是一名计算机科学专业的学生，对人工智能和前沿科技充满热情。专注于全栈开发，同时积极探索机器学习和数据科学领域。'
     }
   },
   projects: {
