@@ -2,6 +2,7 @@ import '../styles/globals.css';
 import { Toaster } from 'react-hot-toast';
 import { initializeAdmin } from '../lib/auth';
 import { LanguageProvider } from '../contexts/LanguageContext';
+import { AuthProvider } from '../contexts/AuthContext';
 
 // 只在服务器端初始化
 if (typeof window === 'undefined') {
@@ -19,10 +20,12 @@ if (typeof window === 'undefined') {
 
 function MyApp({ Component, pageProps }) {
   return (
-    <LanguageProvider>
-      <Component {...pageProps} />
-      <Toaster />
-    </LanguageProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <Component {...pageProps} />
+        <Toaster />
+      </LanguageProvider>
+    </AuthProvider>
   );
 }
 
