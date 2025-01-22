@@ -27,14 +27,15 @@ export async function connectToDatabase() {
   const client = await MongoClient.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    // 禁用可选功能
+    maxPoolSize: 1,
+    // 禁用所有可选功能
     monitorCommands: false,
     autoEncryption: false,
-    maxPoolSize: 1,
+    tls: false,
+    directConnection: true,
   });
 
   const db = client.db(MONGODB_DB);
-
   cachedClient = client;
   cachedDb = db;
 

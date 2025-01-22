@@ -16,21 +16,27 @@ const nextConfig = {
   
   // 修改 webpack 配置
   webpack: (config, { isServer }) => {
-    // MongoDB 配置
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        mongodb: false,
+        net: false,
+        tls: false,
+        fs: false,
+        dns: false,
+        child_process: false,
         'mongodb-client-encryption': false,
-        'kerberos': false,
-        '@mongodb-js/zstd': false,
-        'snappy': false,
-        'aws4': false,
-        '@aws-sdk/credential-providers': false,
-        'gcp-metadata': false,
-        'socks': false,
       };
     }
+
+    // 忽略这些原生模块
+    config.externals = [...(config.externals || []), {
+      'utf-8-validate': 'commonjs utf-8-validate',
+      'bufferutil': 'commonjs bufferutil',
+      'kerberos': 'commonjs kerberos',
+      'snappy': 'commonjs snappy',
+      '@mongodb-js/zstd': 'commonjs @mongodb-js/zstd',
+    }];
+
     return config;
   },
 
