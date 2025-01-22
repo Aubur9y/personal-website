@@ -26,7 +26,7 @@ export default function ManagePosts({ posts: initialPosts }) {
       }
 
       // 从列表中移除已删除的文章
-      setPosts(posts.filter(post => post._id !== id));
+      setPosts(posts.filter(post => post.slug !== id));
       toast.success(translations.blog.deleteSuccess);
     } catch (error) {
       console.error('Delete error:', error);
@@ -54,7 +54,7 @@ export default function ManagePosts({ posts: initialPosts }) {
             <div className="space-y-4">
               {posts.map((post) => (
                 <div
-                  key={post._id}
+                  key={post.slug}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                 >
                   <div className="flex-1">
@@ -65,14 +65,14 @@ export default function ManagePosts({ posts: initialPosts }) {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => router.push(`/blog/edit/${post._id}`)}
+                      onClick={() => router.push(`/blog/edit/${post.slug}`)}
                       className="p-2 text-blue-600 hover:text-blue-800"
                       title={translations.common.edit}
                     >
                       <FaEdit size={20} />
                     </button>
                     <button
-                      onClick={() => handleDelete(post._id)}
+                      onClick={() => handleDelete(post.slug)}
                       className="p-2 text-red-600 hover:text-red-800"
                       title={translations.blog.delete}
                     >

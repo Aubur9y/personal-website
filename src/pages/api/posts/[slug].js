@@ -39,9 +39,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      const result = await db.collection('posts').deleteOne({
-        _id: new ObjectId(slug)
-      });
+      const result = await db.collection('posts').deleteOne({ slug });
 
       if (result.deletedCount === 0) {
         return res.status(404).json({ error: '文章不存在' });
