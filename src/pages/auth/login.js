@@ -33,7 +33,7 @@ export default function Login() {
       if (!res.ok) throw new Error(data.error || '操作失败');
 
       toast.success(isLogin ? '登录成功！' : '注册成功！');
-      router.push(router.query.redirect || '/blog');
+      router.push('/');
     } catch (error) {
       toast.error(error.message);
     } finally {

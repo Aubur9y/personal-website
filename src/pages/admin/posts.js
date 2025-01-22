@@ -11,6 +11,7 @@ export default function PostsManagement() {
   const router = useRouter();
   const [posts, setPosts] = useState(blogPosts);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 过滤文章
   const filteredPosts = posts.filter(post => 
@@ -22,6 +23,34 @@ export default function PostsManagement() {
   // 编辑文章
   const handleEdit = (post) => {
     router.push(`/admin/posts/edit/${post.slug}`);
+  };
+
+  // 删除文章
+  const handleDelete = async (post) => {
+    if (!window.confirm(`确定要删除文章"${post.title}"吗？此操作不可恢复！`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/posts/${post.slug}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || '删除失败');
+      }
+
+      setPosts(posts.filter(p => p.slug !== post.slug));
+      toast.success('文章删除成功');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error(error.message || '删除失败');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -94,7 +123,7 @@ export default function PostsManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-4">
                         <button
                           onClick={() => handleEdit(post)}
                           className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
@@ -102,6 +131,17 @@ export default function PostsManagement() {
                         >
                           <FaEdit />
                           编辑
+                        </button>
+                        <button
+                          onClick={() => handleDelete(post)}
+                          disabled={isDeleting}
+                          className={`text-red-600 hover:text-red-900 flex items-center gap-1 ${
+                            isDeleting ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          title="删除文章"
+                        >
+                          <FaTrash />
+                          删除
                         </button>
                       </div>
                     </td>

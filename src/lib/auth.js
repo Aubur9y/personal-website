@@ -49,9 +49,13 @@ export async function createUser({ email, password, name }) {
 export async function validateUser(emailOrUsername, password) {
   const { db } = await connectToDatabase();
   
+  console.log('Validating user:', { emailOrUsername }); // 添加日志
+  console.log('Admin email:', process.env.DEFAULT_ADMIN_EMAIL); // 添加日志
+  
   // 先尝试使用管理员用户名登录
   if (emailOrUsername === process.env.DEFAULT_ADMIN_EMAIL && 
       password === process.env.DEFAULT_ADMIN_PASSWORD) {
+    console.log('Admin login successful'); // 添加日志
     return {
       _id: 'admin',
       email: process.env.DEFAULT_ADMIN_EMAIL,
@@ -70,9 +74,13 @@ export async function validateUser(emailOrUsername, password) {
     ]
   });
 
+  console.log('Found user:', user ? 'yes' : 'no'); // 添加日志
+
   if (!user) return null;
 
   const isValid = await bcrypt.compare(password, user.password);
+  console.log('Password valid:', isValid); // 添加日志
+
   if (!isValid) return null;
 
   // 不返回密码
@@ -93,18 +101,37 @@ export function generateToken(user) {
   );
 }
 
-export function verifyToken(token) {
+export function verifyToken(req) {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET);
-  } catch {
-    return null;
+    if (!req?.headers?.cookie) {
+      throw new Error('未找到认证令牌');
+    }
+
+    const cookies = cookie.parse(req.headers.cookie);
+    const token = cookies.auth;
+
+    if (!token) {
+      throw new Error('未找到认证令牌');
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded;
+  } catch (error) {
+    console.error('Token verification error:', error);
+    throw new Error('认证失败');
   }
 }
 
 export function getAuthUser(req) {
-  const token = req?.cookies?.auth;
-  if (!token) return null;
-  return verifyToken(token);
+  try {
+    if (!req?.headers?.cookie) {
+      return null;
+    }
+    return verifyToken(req);
+  } catch (error) {
+    console.error('Get auth user error:', error);
+    return null;
+  }
 }
 
 export function isAdmin(req) {
@@ -116,17 +143,18 @@ export function isAuthenticated(req) {
   return getAuthUser(req) !== null;
 }
 
-// 添加一些辅助函数
+// 修改 cookie 设置函数
 export function setAuthCookie(token) {
   Cookies.set('auth', token, { 
-    expires: 1, // 1天后过期
+    expires: 7, // 改为7天以匹配 token 过期时间
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Lax'
+    sameSite: 'Lax',
+    path: '/'
   });
 }
 
 export function removeAuthCookie() {
-  Cookies.remove('auth');
+  Cookies.remove('auth', { path: '/' });
 }
 
 // 添加初始化函数
