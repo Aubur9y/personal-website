@@ -3,6 +3,7 @@ import { isAdmin } from '../../../lib/auth';
 import formidable from 'formidable';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 export const config = {
   api: {
@@ -38,8 +39,10 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: '需要管理员权限' });
     }
 
-    // 使用 /tmp 目录作为临时存储
-    const uploadDir = '/tmp';
+    // 使用系统临时目录
+    const uploadDir = os.tmpdir();
+    console.log('Using temp directory:', uploadDir);
+
     const form = formidable({
       uploadDir,
       keepExtensions: true,

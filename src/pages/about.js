@@ -240,7 +240,7 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
   return (
     <div className="min-h-screen bg-gray-50">
       <Head>
-        <title>{translations.about.pageTitle}</title>
+        <title>{translations.about.title}</title>
         <meta name="description" content={translations.about.pageDescription} />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
@@ -310,8 +310,8 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
 
         {/* 主要内容区域 */}
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-4 md:p-8">
-            {/* 管理按钮组 */}
+          <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
+            {/* 管理员编辑按钮 */}
             {isAdminUser && (
               <div className="mb-4 md:mb-8 flex flex-wrap justify-end gap-2 md:gap-4">
                 {isEditing ? (
@@ -347,6 +347,7 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
                   {lang === 'zh' ? '查看简历' : 'View Resume'}
                 </Link>
               )}
+              {/* 管理员上传简历按钮 */}
               {isAdminUser && (
                 <label className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
                   <FaFileDownload className="mr-2" />
@@ -361,48 +362,26 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
               )}
             </div>
 
-            {/* 简历预览 */}
-            {showResume && currentResumePath && (
-              <div className="mb-8 bg-white rounded-lg shadow-lg overflow-hidden">
-                <iframe
-                  src={`${currentResumePath}#toolbar=0&navpanes=0&scrollbar=0`}
-                  className="w-full h-[400px] md:h-[800px]"
-                  style={{ border: 'none' }}
+            {/* 内容区域 */}
+            {isEditing && isAdminUser ? (
+              <div className="space-y-4">
+                <textarea
+                  value={lang === 'zh' ? contentZh : contentEn}
+                  onChange={(e) => {
+                    if (lang === 'zh') {
+                      setContentZh(e.target.value);
+                    } else {
+                      setContentEn(e.target.value);
+                    }
+                  }}
+                  className="w-full h-[400px] md:h-[600px] p-4 border rounded font-mono"
                 />
               </div>
-            )}
-
-            {/* 内容区域 */}
-            {isEditing ? (
-              <textarea
-                value={lang === 'zh' ? contentZh : contentEn}
-                onChange={(e) => {
-                  if (lang === 'zh') {
-                    setContentZh(e.target.value);
-                  } else {
-                    setContentEn(e.target.value);
-                  }
-                }}
-                className="w-full h-[400px] md:h-[600px] p-4 border rounded font-mono"
-              />
             ) : (
-              <article className="prose prose-sm md:prose-lg max-w-none">
-                <div 
-                  className="
-                    prose-h1:text-2xl md:prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-6 md:prose-h1:mb-8 
-                    prose-h2:text-xl md:prose-h2:text-2xl prose-h2:font-bold prose-h2:mb-4 md:prose-h2:mb-6 prose-h2:mt-6 md:prose-h2:mt-8
-                    prose-h3:text-lg md:prose-h3:text-xl prose-h3:font-bold prose-h3:mb-3 md:prose-h3:mb-4 prose-h3:mt-4 md:prose-h3:mt-6
-                    prose-p:text-gray-600 prose-p:leading-relaxed prose-p:mb-4
-                    prose-ul:space-y-1 md:prose-ul:space-y-2 prose-ul:mb-4 md:prose-ul:mb-6 prose-ul:list-none prose-ul:pl-0
-                    prose-li:flex prose-li:items-start prose-li:gap-2
-                    prose-strong:font-semibold prose-strong:text-gray-800
-                    prose-a:text-blue-600 prose-a:hover:text-blue-800
-                  "
-                  dangerouslySetInnerHTML={{ 
-                    __html: parsedContent 
-                  }} 
-                />
-              </article>
+              <article 
+                className="prose prose-lg max-w-none"
+                dangerouslySetInnerHTML={{ __html: parsedContent }}
+              />
             )}
 
             {/* 最后更新时间 */}
