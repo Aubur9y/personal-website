@@ -49,6 +49,9 @@ const nextConfig = {
         'zlib': false,
         'os': false,
         'path': false,
+        'socks': false,
+        '@aws-sdk/credential-providers': false,
+        'gcp-metadata': false,
       };
 
       // 忽略这些原生模块
@@ -60,6 +63,7 @@ const nextConfig = {
         '@mongodb-js/zstd': 'commonjs @mongodb-js/zstd',
         'mongodb-client-encryption': 'commonjs mongodb-client-encryption',
         'aws4': 'commonjs aws4',
+        'socks': 'commonjs socks'
       }];
     }
     return config;
