@@ -29,15 +29,4 @@ function MyApp({ Component, pageProps }) {
   );
 }
 
-export default MyApp;
-
-export function getServerSideProps({ req, res }) {
-  res.setHeader(
-    'Cache-Control',
-    'public, s-maxage=10, stale-while-revalidate=59'
-  );
-  
-  return {
-    props: {},
-  };
-} 
+export default MyApp; 

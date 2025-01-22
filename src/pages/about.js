@@ -12,6 +12,7 @@ import { connectToDatabase } from '../lib/db';
 import { isAdmin } from '../lib/auth';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useRouter } from 'next/router';
+import { verifyToken } from '../lib/auth';
 
 const defaultAbout = {
   zh: `
@@ -397,7 +398,7 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
   );
 }
 
-export async function getStaticProps() {
+export async function getServerSideProps({ req }) {
   try {
     const { db } = await connectToDatabase();
     if (!db) {
@@ -407,9 +408,20 @@ export async function getStaticProps() {
           resumePaths: { zh: null, en: null },
           lastUpdated: null,
           isAdmin: false
-        },
-        revalidate: 60
+        }
       };
+    }
+
+    // 验证管理员身份
+    let isAdminUser = false;
+    try {
+      const token = req.cookies.auth;
+      if (token) {
+        const user = await verifyToken(token);
+        isAdminUser = user && user.role === 'admin';
+      }
+    } catch (error) {
+      console.error('验证管理员失败:', error);
     }
 
     const about = await db.collection('about').findOne({});
@@ -423,20 +435,18 @@ export async function getStaticProps() {
           en: resumes?.en || null
         },
         lastUpdated: about?.updatedAt ? new Date(about.updatedAt).toLocaleDateString() : null,
-        isAdmin: true
-      },
-      revalidate: 60
+        isAdmin: isAdminUser
+      }
     };
   } catch (error) {
-    console.error('Error in getStaticProps:', error);
+    console.error('Error in getServerSideProps:', error);
     return {
       props: {
         about: { contentZh: defaultAbout.zh, contentEn: defaultAbout.en },
         resumePaths: { zh: null, en: null },
         lastUpdated: null,
         isAdmin: false
-      },
-      revalidate: 60
+      }
     };
   }
 } 

@@ -64,15 +64,14 @@ export default function Blog() {
   );
 }
 
-export async function getStaticProps() {
+export async function getServerSideProps() {
   try {
     const { db } = await connectToDatabase();
     if (!db) {
       return {
         props: {
           posts: []
-        },
-        revalidate: 60
+        }
       };
     }
 
@@ -84,16 +83,14 @@ export async function getStaticProps() {
     return {
       props: {
         posts: JSON.parse(JSON.stringify(posts))
-      },
-      revalidate: 60
+      }
     };
   } catch (error) {
     console.error('Error fetching posts:', error);
     return {
       props: {
         posts: []
-      },
-      revalidate: 60
+      }
     };
   }
 } 
