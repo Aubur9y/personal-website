@@ -26,6 +26,15 @@ const nextConfig = {
         child_process: false,
         'timers/promises': false,
         'mongodb-client-encryption': false,
+        'aws4': false,
+        'util': false,
+        'crypto': false,
+        'stream': false,
+        'http': false,
+        'https': false,
+        'zlib': false,
+        'os': false,
+        'path': false,
       };
 
       // 忽略这些原生模块
@@ -36,6 +45,7 @@ const nextConfig = {
         'snappy': 'commonjs snappy',
         '@mongodb-js/zstd': 'commonjs @mongodb-js/zstd',
         'mongodb-client-encryption': 'commonjs mongodb-client-encryption',
+        'aws4': 'commonjs aws4',
       }];
     }
 
