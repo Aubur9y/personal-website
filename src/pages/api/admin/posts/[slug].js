@@ -1,5 +1,5 @@
-import { connectToDatabase } from '@/lib/mongodb';
-import { verifyToken } from '@/lib/auth';
+import { connectToDatabase } from '../../../../lib/mongodb';
+import { verifyToken } from '../../../../lib/auth';
 
 export default async function handler(req, res) {
   // 验证管理员身份

@@ -25,7 +25,6 @@ const nextConfig = {
 
   // 禁用字体优化
   optimizeFonts: false,
-  optimizeCss: false,
   poweredByHeader: false,
   
   // 修改 webpack 配置
@@ -77,10 +76,6 @@ const nextConfig = {
     serverComponentsExternalPackages: ['mongodb'],
     esmExternals: 'loose',
   },
-
-  // 禁用静态导出
-  trailingSlash: false,
-  exportPathMap: null,
 
   // 构建配置
   distDir: '.next',
