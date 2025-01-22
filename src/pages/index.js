@@ -6,7 +6,7 @@ import Navbar from '../components/Navbar';
 import { FaUser, FaCode, FaBook, FaArrowRight, FaEnvelope, FaGithub, FaLinkedin, FaWeixin } from 'react-icons/fa';
 import { useLanguage } from '../contexts/LanguageContext';
 
-// 定义动画变体
+// 动画变体配置
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -18,22 +18,21 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
-    y: 0,
     opacity: 1,
+    y: 0,
     transition: {
-      duration: 0.5,
-      ease: "easeOut"
+      duration: 0.5
     }
   }
 };
 
 const cardVariants = {
-  hidden: { scale: 0.8, opacity: 0 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
-    scale: 1,
     opacity: 1,
+    y: 0,
     transition: {
       duration: 0.5
     }
@@ -48,43 +47,44 @@ const cardVariants = {
 
 export default function Home() {
   const { translations } = useLanguage();
-  
+  const [activeCard, setActiveCard] = useState(null);
+
   const cards = [
     {
-      id: 'about',
-      title: '关于我',
-      description: '了解我的技术栈、工作经历和教育背景',
-      icon: FaUser,
-      href: '/about',
-      color: 'from-indigo-500 via-purple-500 to-pink-500',
+      id: 1,
+      title: translations?.home?.cards?.about?.title || '关于我',
+      description: translations?.home?.cards?.about?.description || '了解我的技术栈、工作经历和教育背景',
+      link: '/about',
+      action: translations?.home?.cards?.about?.action || '了解更多',
+      color: 'from-indigo-500 via-purple-500 to-pink-500'
     },
     {
-      id: 'projects',
-      title: '项目展示',
-      description: '探索我的开源项目和技术实践',
-      icon: FaCode,
-      href: '/projects',
-      color: 'from-blue-500 via-teal-500 to-emerald-500',
+      id: 2,
+      title: translations?.home?.cards?.projects?.title || '项目展示',
+      description: translations?.home?.cards?.projects?.description || '探索我的开源项目和技术实践',
+      link: '/projects',
+      action: translations?.home?.cards?.projects?.action || '查看项目',
+      color: 'from-blue-500 via-teal-500 to-emerald-500'
     },
     {
-      id: 'blog',
-      title: '技术博客',
-      description: '分享我的技术见解和学习心得',
-      icon: FaBook,
-      href: '/blog',
-      color: 'from-orange-500 via-red-500 to-purple-500',
-    },
+      id: 3,
+      title: translations?.home?.cards?.blog?.title || '技术博客',
+      description: translations?.home?.cards?.blog?.description || '分享我的技术见解和学习心得',
+      link: '/blog',
+      action: translations?.home?.cards?.blog?.action || '阅读博客',
+      color: 'from-orange-500 via-red-500 to-purple-500'
+    }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gray-900 text-white">
       <Head>
-        <title>{translations.common.siteTitle}</title>
-        <meta name="description" content={translations.home.hero.description} />
+        <title>{translations?.common?.siteTitle || '个人网站'}</title>
+        <meta name="description" content="相祺的个人网站" />
       </Head>
 
       <Navbar />
-      
+
       <main className="container mx-auto px-4 py-12">
         {/* Hero Section */}
         <motion.div 
@@ -98,20 +98,20 @@ export default function Home() {
             variants={itemVariants}
           >
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-              {translations.home.hero.title}
+              {translations?.home?.hero?.title || '你好，我是相祺'}
             </span>
           </motion.h1>
           <motion.h2 
             className="text-2xl text-gray-300 mb-4"
             variants={itemVariants}
           >
-            {translations.home.hero.subtitle}
+            {translations?.home?.hero?.subtitle || '全栈开发者 & 机器学习工程师'}
           </motion.h2>
           <motion.p 
             className="text-xl text-gray-400 mb-8"
             variants={itemVariants}
           >
-            {translations.home.hero.description}
+            {translations?.home?.hero?.description || '我热衷于网站开发和人工智能技术'}
           </motion.p>
         </motion.div>
 
@@ -126,7 +126,10 @@ export default function Home() {
               whileHover="hover"
               className="transform-gpu"
             >
-              <Link href={card.href} className="block">
+              <Link 
+                href={card.link}
+                className="block"
+              >
                 <div className={`
                   relative h-80 rounded-2xl p-8
                   bg-gradient-to-br ${card.color}
@@ -139,14 +142,23 @@ export default function Home() {
                 `}>
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-transparent" />
                   <div className="relative z-10 h-full flex flex-col text-white">
-                    <card.icon className="w-12 h-12 mb-6 transform group-hover:scale-110 transition-transform duration-300" />
-                    <h2 className="text-2xl font-bold mb-4">{translations.home.cards[card.id].title}</h2>
-                    <p className="text-lg text-white/80">{translations.home.cards[card.id].description}</p>
+                    <h3 className="text-2xl font-bold mb-4">{card.title}</h3>
+                    <p className="text-lg text-white/80 mb-4 flex-grow">{card.description}</p>
                     <div className="mt-auto">
                       <span className="inline-flex items-center text-sm font-semibold group-hover:translate-x-1 transition-transform duration-300">
-                        {translations.home.cards[card.id].action}
-                        <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        {card.action}
+                        <svg 
+                          className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M17 8l4 4m0 0l-4 4m4-4H3" 
+                          />
                         </svg>
                       </span>
                     </div>
@@ -165,7 +177,7 @@ export default function Home() {
           transition={{ delay: 1 }}
         >
           <h2 className="text-2xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-            {translations.home.cards.slogan}
+            {translations?.home?.cards?.slogan || "让我们一起探索技术的无限可能"}
           </h2>
         </motion.div>
 

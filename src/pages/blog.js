@@ -11,8 +11,9 @@ import TagFilter from '../components/TagFilter'
 import { blogPosts } from '../data/blogPosts'
 import { isAdmin } from '../lib/auth'
 import { useLanguage } from '../contexts/LanguageContext'
+import { connectToDatabase } from '../lib/db'
 
-export default function Blog() {
+export default function Blog({ posts }) {
   const { translations } = useLanguage();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -186,4 +187,38 @@ export default function Blog() {
       </main>
     </div>
   )
+}
+
+export async function getStaticProps() {
+  try {
+    const { db } = await connectToDatabase();
+    if (!db) {
+      return {
+        props: {
+          posts: []
+        },
+        revalidate: 60
+      };
+    }
+
+    const posts = await db.collection('posts')
+      .find({})
+      .sort({ date: -1 })
+      .toArray();
+
+    return {
+      props: {
+        posts: JSON.parse(JSON.stringify(posts))
+      },
+      revalidate: 60
+    };
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return {
+      props: {
+        posts: []
+      },
+      revalidate: 60
+    };
+  }
 } 

@@ -16,7 +16,7 @@ const nextConfig = {
   
   // 图片配置
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'your-domain.com'],
     unoptimized: true,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -30,6 +30,7 @@ const nextConfig = {
   // 修改 webpack 配置
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      // 在客户端构建中忽略这些模块
       config.resolve.fallback = {
         ...config.resolve.fallback,
         net: false,
@@ -61,7 +62,6 @@ const nextConfig = {
         'aws4': 'commonjs aws4',
       }];
     }
-
     return config;
   },
 
