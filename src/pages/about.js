@@ -167,13 +167,14 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
     setParsedContent(marked(currentContent || '', markdownOptions));
   }, [currentContent]);
 
-  const handleResumeUpload = async (event) => {
+  const handleResumeUpload = async (event, language) => {
     try {
       const file = event.target.files[0];
       if (!file) return;
 
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('language', language); // 添加语言参数
 
       const response = await fetch('/api/upload/resume', {
         method: 'POST',
@@ -187,7 +188,7 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
       }
 
       const data = await response.json();
-      toast.success('简历上传成功');
+      toast.success(lang === 'zh' ? '简历上传成功' : 'Resume uploaded successfully');
       
       // 刷新页面以显示新上传的简历
       router.reload();
@@ -333,36 +334,28 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
               </div>
             )}
 
-            {/* 简历按钮组和预览 */}
+            {/* 简历按钮组 */}
             <div className="mb-4 flex flex-wrap justify-end gap-2 md:gap-4">
-              <button
-                onClick={() => setShowResume(!showResume)}
-                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                <FaFileDownload className="mr-2" />
-                {showResume ? translations.about.hideResume : translations.about.viewResume}
-              </button>
               {currentResumePath && (
-                <div className="mt-4">
-                  <Link
-                    href={`/api/resume/resume.pdf`}
-                    target="_blank"
-                    className="inline-flex items-center text-blue-600 hover:text-blue-800"
-                  >
-                    <FaFileDownload className="mr-2" />
-                    {translations?.about?.viewResume || '查看简历'}
-                  </Link>
-                </div>
+                <Link
+                  href={`/api/resume/${lang === 'zh' ? 'resume_zh.pdf' : 'resume_en.pdf'}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  <FaFileDownload className="mr-2" />
+                  {lang === 'zh' ? '查看简历' : 'View Resume'}
+                </Link>
               )}
               {isAdminUser && (
                 <label className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
                   <FaFileDownload className="mr-2" />
-                  {translations.about.uploadResume}
+                  {lang === 'zh' ? '上传简历' : 'Upload Resume'}
                   <input
                     type="file"
                     className="hidden"
                     accept=".pdf"
-                    onChange={handleResumeUpload}
+                    onChange={(e) => handleResumeUpload(e, lang)}
                   />
                 </label>
               )}

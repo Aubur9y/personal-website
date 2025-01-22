@@ -55,6 +55,8 @@ export default async function handler(req, res) {
         }
 
         const file = files.file?.[0];
+        const language = fields.language?.[0] || 'zh';
+
         if (!file) {
           res.status(400).json({ error: '没有找到文件' });
           return resolve();
@@ -70,8 +72,8 @@ export default async function handler(req, res) {
             { key: 'resume' },
             {
               $set: {
-                content: fileContent.toString('base64'),
-                filename: 'resume.pdf',
+                [`content_${language}`]: fileContent.toString('base64'),
+                [`filename_${language}`]: `resume_${language}.pdf`,
                 contentType: 'application/pdf',
                 updatedAt: new Date()
               }
