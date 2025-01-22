@@ -22,8 +22,8 @@ export default {
   home: {
     hero: {
       title: "Hi, I'm Qi Xiang",
-      subtitle: "Full Stack Developer & ML Engineer",
-      description: "I build things for the web and explore AI technologies"
+      subtitle: "Computer Science Student & Tech Enthusiast",
+      description: "Focused on full-stack development while exploring AI and emerging technologies"
     },
     sections: {
       recentPosts: 'Recent Posts',

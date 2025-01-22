@@ -22,8 +22,8 @@ export default {
   home: {
     hero: {
       title: '你好，我是相祺',
-      subtitle: '全栈开发者 & 机器学习工程师',
-      description: '我热衷于网站开发和人工智能技术'
+      subtitle: '计算机科学学生 & 技术爱好者',
+      description: '专注全栈开发，热衷探索人工智能与前沿科技'
     },
     sections: {
       recentPosts: '最新文章',
