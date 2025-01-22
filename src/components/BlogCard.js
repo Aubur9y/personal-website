@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ImageWithFallback from './ImageWithFallback';
 import ShareButtons from './ShareButtons';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const DEFAULT_COVER = '/images/default-cover.jpg';
 
@@ -25,6 +26,7 @@ const toBase64 = (str) =>
     : window.btoa(str);
 
 export default function BlogCard({ post, isAdmin }) {
+  const { translations } = useLanguage();
   const [currentUserId, setCurrentUserId] = useState(null);
 
   // 获取当前用户信息
@@ -74,7 +76,7 @@ export default function BlogCard({ post, isAdmin }) {
             {post.category}
           </span>
           <span className="text-sm text-gray-500">{post.date}</span>
-          <span className="text-sm text-gray-500">· {post.readTime} 分钟阅读</span>
+          <span className="text-sm text-gray-500">· {post.readTime} {translations.blog.readTime}</span>
         </div>
 
         {/* 作者信息 */}
@@ -82,12 +84,12 @@ export default function BlogCard({ post, isAdmin }) {
           {post.author?.avatar && (
             <img
               src={post.author.avatar}
-              alt={post.author.name}
+              alt={post.author.name || translations.blog.anonymous}
               className="w-8 h-8 rounded-full object-cover"
             />
           )}
           <span className="text-sm text-gray-600">
-            {post.author?.name || '匿名作者'}
+            {translations.blog.authorPrefix} {post.author?.name || translations.blog.anonymous}
           </span>
         </div>
 
@@ -105,14 +107,20 @@ export default function BlogCard({ post, isAdmin }) {
 
         {/* 标签 */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {post.tags.map((tag, index) => (
-            <span 
-              key={index}
-              className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded"
-            >
-              #{tag}
+          {post.tags.map(tag => (
+            <span key={tag} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+              {translations.blog.tags[tag.toLowerCase()] || tag}
             </span>
           ))}
+        </div>
+
+        {/* 阅读时间和作者 */}
+        <div className="text-sm text-gray-500 mb-4">
+          <span>{post.readTime} {translations.blog.readTime}</span>
+          <span className="mx-2">•</span>
+          <span>
+            {translations.blog.authorPrefix} {post.author?.name || translations.blog.anonymous}
+          </span>
         </div>
 
         {/* 操作按钮 */}
@@ -122,10 +130,10 @@ export default function BlogCard({ post, isAdmin }) {
             {/* 管理员可以编辑所有文章 */}
             {isAdmin && (
               <Link
-                href={`/admin/posts/edit?slug=${post.slug}`}
+                href={`/admin/posts/${post.id}/edit`}
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
-                编辑
+                {translations.blog.edit}
               </Link>
             )}
             {/* 作者可以编辑自己的文章 */}
@@ -134,14 +142,14 @@ export default function BlogCard({ post, isAdmin }) {
                 href={`/blog/${post.slug}/edit`}
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
-                编辑
+                {translations.blog.edit}
               </Link>
             )}
             <Link 
               href={`/blog/${post.slug}`} 
               className="text-blue-600 hover:text-blue-800 font-medium inline-flex items-center"
             >
-              阅读更多
+              {translations.blog.readMore}
               <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
               </svg>

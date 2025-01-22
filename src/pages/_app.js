@@ -1,6 +1,7 @@
 import '../styles/globals.css';
 import { Toaster } from 'react-hot-toast';
 import { initializeAdmin } from '../lib/auth';
+import { LanguageProvider } from '../contexts/LanguageContext';
 
 // 只在服务器端初始化
 if (typeof window === 'undefined') {
@@ -18,7 +19,7 @@ if (typeof window === 'undefined') {
 
 function MyApp({ Component, pageProps }) {
   return (
-    <>
+    <LanguageProvider>
       <Component {...pageProps} />
       <Toaster 
         position="top-right"
@@ -44,7 +45,7 @@ function MyApp({ Component, pageProps }) {
           },
         }}
       />
-    </>
+    </LanguageProvider>
   );
 }
 

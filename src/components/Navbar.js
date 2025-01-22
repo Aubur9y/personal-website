@@ -3,10 +3,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { toast } from 'react-hot-toast';
 import { isAdmin } from '../lib/auth';
+import LanguageSwitch from './LanguageSwitch';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Navbar() {
   const [isAdminUser, setIsAdminUser] = useState(false);
   const router = useRouter();
+  const { translations } = useLanguage();
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -44,34 +47,35 @@ export default function Navbar() {
           {/* 导航链接 */}
           <div className="hidden md:flex space-x-8">
             <Link href="/" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-              首页
+              {translations.nav.home}
             </Link>
             <Link href="/blog" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-              博客
+              {translations.nav.blog}
             </Link>
             <Link href="/projects" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-              项目
+              {translations.nav.projects}
             </Link>
             <Link href="/about" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-              关于
+              {translations.nav.about}
             </Link>
           </div>
 
           {/* 用户操作 */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-4">
+            <LanguageSwitch />
             {isAdminUser ? (
               <button
                 onClick={handleLogout}
                 className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
               >
-                登出
+                {translations.nav.logout}
               </button>
             ) : (
               <Link
                 href="/auth/login"
                 className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
               >
-                登录/注册
+                {translations.nav.login}
               </Link>
             )}
           </div>

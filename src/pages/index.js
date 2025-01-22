@@ -3,9 +3,11 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import { FaUser, FaCode, FaBook, FaArrowRight, FaEnvelope, FaGithub, FaLinkedin, FaWeixin } from 'react-icons/fa';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Home() {
   const [hoveredCard, setHoveredCard] = useState(null);
+  const { translations } = useLanguage();
 
   const cards = [
     {
@@ -35,7 +37,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-gray-900">
       <Head>
         <title>相祺的个人网站</title>
         <meta name="description" content="欢迎来到我的个人网站，这里展示了我的项目、博客和个人简介" />
@@ -43,21 +45,19 @@ export default function Home() {
 
       <Navbar />
 
-      <main className="container mx-auto px-4 py-16">
-        <div
-          className="text-center mb-16"
-        >
+      <main className="container mx-auto px-4 py-12">
+        <div className="text-center mb-16">
           <h1 className="text-6xl font-bold mb-6">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-              Welcome to My Space
+              {translations.home.hero.title}
             </span>
           </h1>
-          <p className="text-xl text-gray-300">
-            让我们一起探索技术的无限可能
-          </p>
+          <h2 className="text-2xl font-medium mb-12 bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
+            {translations.home.cards.slogan}
+          </h2>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto perspective-1000">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {cards.map((card, index) => (
             <Link key={card.id} href={card.href} className="block transform-gpu">
               <div
@@ -74,11 +74,11 @@ export default function Home() {
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-transparent" />
                   <div className="relative z-10 h-full flex flex-col text-white">
                     <card.icon className="w-12 h-12 mb-6 transform group-hover:scale-110 transition-transform duration-300" />
-                    <h2 className="text-2xl font-bold mb-4">{card.title}</h2>
-                    <p className="text-lg text-white/80">{card.description}</p>
+                    <h2 className="text-2xl font-bold mb-4">{translations.home.cards[card.id].title}</h2>
+                    <p className="text-lg text-white/80">{translations.home.cards[card.id].description}</p>
                     <div className="mt-auto">
                       <span className="inline-flex items-center text-sm font-semibold group-hover:translate-x-1 transition-transform duration-300">
-                        探索更多
+                        {translations.home.cards[card.id].action}
                         <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
@@ -95,12 +95,12 @@ export default function Home() {
           className="text-center mt-20"
         >
           <div className="inline-flex items-center gap-6 px-8 py-4 rounded-full bg-white/5 backdrop-blur-sm border border-white/10">
-            <span className="text-gray-400">联系我</span>
+            <span className="text-gray-400">{translations.home.contact.title}</span>
             <div className="flex items-center gap-4">
               <div className="group relative">
                 <button className="flex items-center gap-2 text-gray-300 hover:text-blue-400 transition-colors duration-300">
                   <FaWeixin className="w-5 h-5" />
-                  <span className="text-sm">WeChat</span>
+                  <span className="text-sm">{translations.home.contact.wechat}</span>
                 </button>
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 hidden group-hover:block z-50 w-max">
                   <div className="bg-white p-4 rounded-lg shadow-2xl">
@@ -125,7 +125,7 @@ export default function Home() {
                 className="flex items-center gap-2 text-gray-300 hover:text-blue-400 transition-colors duration-300"
               >
                 <FaEnvelope className="w-5 h-5" />
-                <span className="text-sm">Email</span>
+                <span className="text-sm">{translations.home.contact.email}</span>
               </Link>
               <span className="text-gray-600">|</span>
               <Link
@@ -135,7 +135,7 @@ export default function Home() {
                 className="flex items-center gap-2 text-gray-300 hover:text-blue-400 transition-colors duration-300"
               >
                 <FaLinkedin className="w-5 h-5" />
-                <span className="text-sm">LinkedIn</span>
+                <span className="text-sm">{translations.home.contact.linkedin}</span>
               </Link>
             </div>
           </div>

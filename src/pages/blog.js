@@ -10,22 +10,30 @@ import SortSelector from '../components/SortSelector'
 import TagFilter from '../components/TagFilter'
 import { blogPosts } from '../data/blogPosts'
 import { isAdmin } from '../lib/auth'
+import { useLanguage } from '../contexts/LanguageContext'
 
 export default function Blog() {
+  const { translations } = useLanguage();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('全部');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedTags, setSelectedTags] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 6;
   const [isAdminUser, setIsAdminUser] = useState(false);
 
+  useEffect(() => {
+    if (translations) {
+      setSelectedCategory(translations.blog.filters.all);
+    }
+  }, [translations]);
+
   // 获取所有分类
   const categories = useMemo(() => {
-    const cats = ['全部', ...new Set(blogPosts.map(post => post.category))];
-    return cats;
-  }, [blogPosts]);
+    if (!translations) return [];
+    return ['all', ...new Set(blogPosts.map(post => post.category))];
+  }, [blogPosts, translations]);
 
   // 获取所有标签
   const allTags = useMemo(() => {
@@ -38,12 +46,15 @@ export default function Blog() {
 
   // 筛选和搜索文章
   const filteredPosts = useMemo(() => {
+    if (!translations) return [];
+    
     const filtered = blogPosts.filter(post => {
       const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      const matchesCategory = selectedCategory === '全部' || post.category === selectedCategory;
+      const matchesCategory = selectedCategory === translations.blog.filters.all || 
+                            post.category === selectedCategory;
       
       const matchesTags = selectedTags.length === 0 || 
         selectedTags.every(tag => post.tags.includes(tag));
@@ -63,7 +74,7 @@ export default function Blog() {
           return new Date(b.date) - new Date(a.date);
       }
     });
-  }, [blogPosts, searchQuery, selectedCategory, selectedTags, sortBy]);
+  }, [blogPosts, searchQuery, selectedCategory, selectedTags, sortBy, translations]);
 
   // 分页逻辑
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
@@ -89,8 +100,8 @@ export default function Blog() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Head>
-        <title>博客 | 我的个人网站</title>
-        <meta name="description" content="我的博客文章" />
+        <title>{translations.blog.title} | {translations.common.siteTitle}</title>
+        <meta name="description" content={translations.blog.pageDescription} />
       </Head>
 
       <Navbar />
@@ -98,13 +109,13 @@ export default function Blog() {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-4xl font-bold">博客文章</h1>
+            <h1 className="text-4xl font-bold">{translations.blog.title}</h1>
             {isAdminUser && (
               <Link
                 href="/admin/posts"
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                管理文章
+                {translations.blog.manage}
               </Link>
             )}
           </div>
@@ -114,6 +125,7 @@ export default function Blog() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onClear={() => setSearchQuery('')}
+                placeholder={translations.blog.search}
               />
               <SortSelector value={sortBy} onChange={setSortBy} />
             </div>
