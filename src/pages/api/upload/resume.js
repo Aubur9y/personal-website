@@ -62,10 +62,10 @@ export default async function handler(req, res) {
     // 更新数据库中的简历路径
     const { db } = await connectToDatabase();
     await db.collection('settings').updateOne(
-      { key: `resume_${language}` },
+      { key: 'resumes' },
       {
         $set: {
-          path: `/uploads/${fileName}`,
+          [language]: `/uploads/${fileName}`,
           updatedAt: new Date()
         }
       },

@@ -38,7 +38,22 @@ export async function getStaticProps() {
         `https://api.github.com/users/${username}/repos?sort=updated&per_page=100`,
         { headers }
       );
+      
+      // 添加错误检查
+      if (!response.ok) {
+        throw new Error('GitHub API request failed');
+      }
+      
       const repos = await response.json();
+      
+      // 确保 repos 是数组
+      if (!Array.isArray(repos)) {
+        console.error('GitHub API did not return an array');
+        return {
+          props: { projects: [] },
+          revalidate: 3600,
+        };
+      }
 
       const projects = repos
         .filter(repo => !repo.fork && !repo.private)

@@ -179,13 +179,23 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
         body: formData,
       });
 
-      if (!response.ok) throw new Error('上传失败');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || '上传失败');
+      }
 
-      toast.success(translations.about.resumeUploadSuccess);
-      window.location.reload();
+      const data = await response.json();
+      toast.success('简历上传成功');
+      
+      // 更新当前显示的简历路径
+      if (lang === 'zh') {
+        resumePaths.zh = data.path;
+      } else {
+        resumePaths.en = data.path;
+      }
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error(translations.about.resumeUploadError);
+      toast.error(error.message || '上传失败');
     }
   };
 
@@ -233,33 +243,34 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
       <Head>
         <title>{translations.about.pageTitle}</title>
         <meta name="description" content={translations.about.pageDescription} />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
 
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 sm:px-6 py-8">
         {/* 个人资料卡片 */}
         <div className="max-w-4xl mx-auto mb-8">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="md:flex">
-              {/* 左侧头像 */}
+            <div className="flex flex-col md:flex-row">
+              {/* 头像容器 */}
               <div className="md:flex-shrink-0">
                 <Image
                   src="/images/avatar.jpg"
                   alt="个人头像"
                   width={200}
                   height={200}
-                  className="h-48 w-full object-cover md:h-full md:w-48"
+                  className="w-full h-48 md:h-full md:w-48 object-cover"
                   priority
                   sizes="(max-width: 768px) 100vw, 200px"
                 />
               </div>
               
               {/* 右侧信息 */}
-              <div className="p-8">
-                <div className="flex items-center justify-between">
+              <div className="p-4 md:p-8 w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <h1 className="text-2xl font-bold text-gray-900">
-                    {lang === 'zh' ? '相祺' : 'Xiangqi'}
+                    {lang === 'zh' ? '相祺' : 'Qi Xiang'}
                   </h1>
                   <div className="flex space-x-4">
                     <a href="https://github.com/Aubur9y" target="_blank" rel="noopener noreferrer" 
@@ -300,10 +311,10 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
 
         {/* 主要内容区域 */}
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-8">
             {/* 管理按钮组 */}
             {isAdminUser && (
-              <div className="mb-8 flex justify-end space-x-4">
+              <div className="mb-4 md:mb-8 flex flex-wrap justify-end gap-2 md:gap-4">
                 {isEditing ? (
                   <button
                     onClick={handleSave}
@@ -325,49 +336,48 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
             )}
 
             {/* 简历按钮组和预览 */}
-            {currentResumePath && (
-              <>
-                <div className="mb-4 flex justify-end space-x-4">
-                  <button
-                    onClick={() => setShowResume(!showResume)}
-                    className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    <FaFileDownload className="mr-2" />
-                    {showResume ? translations.about.hideResume : translations.about.viewResume}
-                  </button>
-                  <Link
-                    href={currentResumePath}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <FaFileDownload className="mr-2" />
-                    {translations.about.downloadResume}
-                  </Link>
-                  {isAdminUser && (
-                    <label className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
-                      <FaFileDownload className="mr-2" />
-                      {translations.about.uploadResume}
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".pdf"
-                        onChange={handleResumeUpload}
-                      />
-                    </label>
-                  )}
-                </div>
+            <div className="mb-4 flex flex-wrap justify-end gap-2 md:gap-4">
+              <button
+                onClick={() => setShowResume(!showResume)}
+                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                <FaFileDownload className="mr-2" />
+                {showResume ? translations.about.hideResume : translations.about.viewResume}
+              </button>
+              {currentResumePath && (
+                <Link
+                  href={currentResumePath}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FaFileDownload className="mr-2" />
+                  {translations.about.downloadResume}
+                </Link>
+              )}
+              {isAdminUser && (
+                <label className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
+                  <FaFileDownload className="mr-2" />
+                  {translations.about.uploadResume}
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf"
+                    onChange={handleResumeUpload}
+                  />
+                </label>
+              )}
+            </div>
 
-                {showResume && (
-                  <div className="mb-8 bg-white rounded-lg shadow-lg overflow-hidden">
-                    <iframe
-                      src={`${currentResumePath}#toolbar=0&navpanes=0&scrollbar=0`}
-                      className="w-full h-[800px]"
-                      style={{ border: 'none' }}
-                    />
-                  </div>
-                )}
-              </>
+            {/* 简历预览 */}
+            {showResume && currentResumePath && (
+              <div className="mb-8 bg-white rounded-lg shadow-lg overflow-hidden">
+                <iframe
+                  src={`${currentResumePath}#toolbar=0&navpanes=0&scrollbar=0`}
+                  className="w-full h-[400px] md:h-[800px]"
+                  style={{ border: 'none' }}
+                />
+              </div>
             )}
 
             {/* 内容区域 */}
@@ -381,17 +391,17 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
                     setContentEn(e.target.value);
                   }
                 }}
-                className="w-full h-[600px] p-4 border rounded font-mono"
+                className="w-full h-[400px] md:h-[600px] p-4 border rounded font-mono"
               />
             ) : (
-              <article className="prose prose-lg max-w-none">
+              <article className="prose prose-sm md:prose-lg max-w-none">
                 <div 
                   className="
-                    prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-8 
-                    prose-h2:text-2xl prose-h2:font-bold prose-h2:mb-6 prose-h2:mt-8
-                    prose-h3:text-xl prose-h3:font-bold prose-h3:mb-4 prose-h3:mt-6
+                    prose-h1:text-2xl md:prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-6 md:prose-h1:mb-8 
+                    prose-h2:text-xl md:prose-h2:text-2xl prose-h2:font-bold prose-h2:mb-4 md:prose-h2:mb-6 prose-h2:mt-6 md:prose-h2:mt-8
+                    prose-h3:text-lg md:prose-h3:text-xl prose-h3:font-bold prose-h3:mb-3 md:prose-h3:mb-4 prose-h3:mt-4 md:prose-h3:mt-6
                     prose-p:text-gray-600 prose-p:leading-relaxed prose-p:mb-4
-                    prose-ul:space-y-2 prose-ul:mb-6 prose-ul:list-none prose-ul:pl-0
+                    prose-ul:space-y-1 md:prose-ul:space-y-2 prose-ul:mb-4 md:prose-ul:mb-6 prose-ul:list-none prose-ul:pl-0
                     prose-li:flex prose-li:items-start prose-li:gap-2
                     prose-strong:font-semibold prose-strong:text-gray-800
                     prose-a:text-blue-600 prose-a:hover:text-blue-800
@@ -405,7 +415,7 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
 
             {/* 最后更新时间 */}
             {lastUpdated && (
-              <div className="mt-8 text-sm text-gray-500">
+              <div className="mt-6 md:mt-8 text-sm text-gray-500">
                 {translations.common.lastUpdated} {lastUpdated}
               </div>
             )}
@@ -423,10 +433,7 @@ export async function getStaticProps() {
       return {
         props: {
           about: { contentZh: defaultAbout.zh, contentEn: defaultAbout.en },
-          resumePaths: {
-            zh: process.env.RESUME_PATH_ZH,
-            en: process.env.RESUME_PATH_EN
-          },
+          resumePaths: { zh: null, en: null },
           lastUpdated: null,
           isAdmin: false
         },
@@ -435,13 +442,14 @@ export async function getStaticProps() {
     }
 
     const about = await db.collection('about').findOne({});
+    const resumes = await db.collection('settings').findOne({ key: 'resumes' });
     
     return {
       props: {
         about: about ? JSON.parse(JSON.stringify(about)) : { contentZh: defaultAbout.zh, contentEn: defaultAbout.en },
         resumePaths: {
-          zh: process.env.RESUME_PATH_ZH,
-          en: process.env.RESUME_PATH_EN
+          zh: resumes?.zh || null,
+          en: resumes?.en || null
         },
         lastUpdated: about?.updatedAt ? new Date(about.updatedAt).toLocaleDateString() : null,
         isAdmin: true
@@ -453,10 +461,7 @@ export async function getStaticProps() {
     return {
       props: {
         about: { contentZh: defaultAbout.zh, contentEn: defaultAbout.en },
-        resumePaths: {
-          zh: process.env.RESUME_PATH_ZH,
-          en: process.env.RESUME_PATH_EN
-        },
+        resumePaths: { zh: null, en: null },
         lastUpdated: null,
         isAdmin: false
       },
