@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import { FaUser, FaCode, FaBook, FaArrowRight, FaEnvelope, FaGithub, FaLinkedin, FaWeixin } from 'react-icons/fa';
 
@@ -45,9 +44,7 @@ export default function Home() {
       <Navbar />
 
       <main className="container mx-auto px-4 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div
           className="text-center mb-16"
         >
           <h1 className="text-6xl font-bold mb-6">
@@ -58,21 +55,12 @@ export default function Home() {
           <p className="text-xl text-gray-300">
             让我们一起探索技术的无限可能
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto perspective-1000">
           {cards.map((card, index) => (
             <Link key={card.id} href={card.href} className="block transform-gpu">
-              <motion.div
-                initial={{ opacity: 0, rotateX: -30 }}
-                animate={{ opacity: 1, rotateX: 0 }}
-                transition={{ delay: index * 0.2 }}
-                whileHover={{ 
-                  rotateY: 5,
-                  rotateX: 5,
-                  scale: 1.05,
-                  transition: { duration: 0.3 }
-                }}
+              <div
                 className="cursor-pointer"
               >
                 <div className={`
@@ -98,15 +86,12 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </Link>
           ))}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
+        <div
           className="text-center mt-20"
         >
           <div className="inline-flex items-center gap-6 px-8 py-4 rounded-full bg-white/5 backdrop-blur-sm border border-white/10">
@@ -154,7 +139,7 @@ export default function Home() {
               </Link>
             </div>
           </div>
-        </motion.div>
+        </div>
       </main>
     </div>
   );

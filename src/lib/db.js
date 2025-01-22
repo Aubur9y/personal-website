@@ -3,16 +3,11 @@ import { MongoClient } from 'mongodb';
 const MONGODB_URI = process.env.MONGODB_URI;
 const MONGODB_DB = process.env.MONGODB_DB;
 
-console.log('Environment variables:', {
-  MONGODB_URI: process.env.MONGODB_URI ? '已设置' : '未设置',
-  MONGODB_DB: process.env.MONGODB_DB ? '已设置' : '未设置'
-});
-
-if (!MONGODB_URI) {
+if (typeof window === 'undefined' && !MONGODB_URI) {
   throw new Error('请在环境变量中定义 MONGODB_URI');
 }
 
-if (!MONGODB_DB) {
+if (typeof window === 'undefined' && !MONGODB_DB) {
   throw new Error('请在环境变量中定义 MONGODB_DB');
 }
 
@@ -24,20 +19,25 @@ export async function connectToDatabase() {
     return { client: cachedClient, db: cachedDb };
   }
 
-  const client = await MongoClient.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    maxPoolSize: 1,
-    // 禁用所有可选功能
-    monitorCommands: false,
-    autoEncryption: false,
-    tls: false,
-    directConnection: true,
-  });
+  try {
+    const client = await MongoClient.connect(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      maxPoolSize: 1,
+      // 禁用所有可选功能
+      monitorCommands: false,
+      autoEncryption: false,
+      tls: false,
+      directConnection: true,
+    });
 
-  const db = client.db(MONGODB_DB);
-  cachedClient = client;
-  cachedDb = db;
+    const db = client.db(MONGODB_DB);
+    cachedClient = client;
+    cachedDb = db;
 
-  return { client, db };
+    return { client, db };
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    return { client: null, db: null };
+  }
 } 
