@@ -9,10 +9,10 @@ import {
   FaFileDownload, FaGithub, FaLinkedin, FaEnvelope, FaEdit, FaSave
 } from 'react-icons/fa';
 import { connectToDatabase } from '../lib/db';
-import { isAdmin } from '../lib/auth';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useRouter } from 'next/router';
 import { verifyToken } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 
 const defaultAbout = {
   zh: `
@@ -139,10 +139,10 @@ const markdownOptions = {
   headerPrefix: 'heading-'
 };
 
-export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUpdated }) {
+export default function About({ about, resumePaths, lastUpdated }) {
   const { lang, translations } = useLanguage();
   const router = useRouter();
-  console.log('Admin status:', isAdminUser);
+  const { isAdmin } = useAuth();  // 使用 useAuth hook 获取实时的管理员状态
 
   const [isEditing, setIsEditing] = useState(false);
   // 分别存储中英文内容
@@ -206,6 +206,7 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',  // 重要：确保发送认证 cookie
         body: JSON.stringify({
           contentZh,
           contentEn,
@@ -219,7 +220,7 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
       }
 
       // 保存成功后更新状态
-      toast.success('保存成功');
+      toast.success(lang === 'zh' ? '保存成功' : 'Saved successfully');
       setIsEditing(false);
 
       // 更新 about 对象
@@ -313,7 +314,7 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
             {/* 管理员编辑按钮 */}
-            {isAdminUser && (
+            {isAdmin && (
               <div className="mb-4 md:mb-8 flex flex-wrap justify-end gap-2 md:gap-4">
                 {isEditing ? (
                   <button
@@ -349,7 +350,7 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
                 </Link>
               )}
               {/* 管理员上传简历按钮 */}
-              {isAdminUser && (
+              {isAdmin && (
                 <label className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
                   <FaFileDownload className="mr-2" />
                   {lang === 'zh' ? '上传简历' : 'Upload Resume'}
@@ -364,7 +365,7 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
             </div>
 
             {/* 内容区域 */}
-            {isEditing && isAdminUser ? (
+            {isEditing && isAdmin ? (
               <div className="space-y-4">
                 <textarea
                   value={lang === 'zh' ? contentZh : contentEn}
@@ -412,18 +413,6 @@ export async function getServerSideProps({ req }) {
       };
     }
 
-    // 验证管理员身份
-    let isAdminUser = false;
-    try {
-      const token = req.cookies.auth;
-      if (token) {
-        const user = await verifyToken(token);
-        isAdminUser = user && user.role === 'admin';
-      }
-    } catch (error) {
-      console.error('验证管理员失败:', error);
-    }
-
     const about = await db.collection('about').findOne({});
     const resumes = await db.collection('settings').findOne({ key: 'resumes' });
     
@@ -435,7 +424,7 @@ export async function getServerSideProps({ req }) {
           en: resumes?.en || null
         },
         lastUpdated: about?.updatedAt ? new Date(about.updatedAt).toLocaleDateString() : null,
-        isAdmin: isAdminUser
+        isAdmin: false
       }
     };
   } catch (error) {

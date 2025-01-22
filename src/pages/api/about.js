@@ -1,15 +1,17 @@
 import { connectToDatabase } from '../../lib/db';
-import { isAdmin } from '../../lib/auth';
+import { verifyToken } from '../../lib/auth';
 
 export default async function handler(req, res) {
+  // 只允许 POST 方法
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: '只允许 POST 请求' });
+    return res.status(405).json({ message: '方法不允许' });
   }
 
   try {
-    // 验证管理员权限
-    if (!isAdmin(req)) {
-      return res.status(401).json({ message: '未授权' });
+    // 验证管理员身份
+    const user = await verifyToken(req);
+    if (!user || user.role !== 'admin') {
+      return res.status(401).json({ message: '未授权访问' });
     }
 
     const { contentZh, contentEn } = req.body;
@@ -19,22 +21,28 @@ export default async function handler(req, res) {
 
     const { db } = await connectToDatabase();
     
-    // 更新或插入内容
-    await db.collection('about').updateOne(
-      {},  // 空条件表示更新第一个文档
-      { 
-        $set: { 
+    // 更新或创建关于页面内容
+    const result = await db.collection('about').updateOne(
+      {},  // 空条件，因为只有一个文档
+      {
+        $set: {
           contentZh,
           contentEn,
           updatedAt: new Date().toISOString()
-        } 
+        }
       },
       { upsert: true }  // 如果不存在则创建
     );
 
-    res.status(200).json({ message: '保存成功' });
+    return res.status(200).json({
+      success: true,
+      message: '内容已更新'
+    });
   } catch (error) {
-    console.error('Save error:', error);
-    res.status(500).json({ message: '保存失败' });
+    console.error('Update about error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || '更新失败'
+    });
   }
 } 

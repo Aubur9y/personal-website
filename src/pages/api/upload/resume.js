@@ -1,9 +1,8 @@
-import { connectToDatabase } from '../../../lib/db';
-import { isAdmin } from '../../../lib/auth';
-import formidable from 'formidable';
-import fs from 'fs';
+import { IncomingForm } from 'formidable';
+import { promises as fs } from 'fs';
 import path from 'path';
-import os from 'os';
+import { verifyToken } from '../../../lib/auth';
+import { connectToDatabase } from '../../../lib/db';
 
 export const config = {
   api: {
@@ -12,99 +11,69 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // 添加 CORS 头
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,DELETE,PATCH,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
   if (req.method !== 'POST') {
     return res.status(405).json({ error: '方法不允许' });
   }
 
   try {
-    // 检查管理员权限
-    const adminStatus = isAdmin(req);
-    console.log('Admin status:', adminStatus);
-    
-    if (!adminStatus) {
-      return res.status(401).json({ error: '需要管理员权限' });
+    // 验证管理员身份
+    const user = await verifyToken(req);
+    if (!user || user.role !== 'admin') {
+      return res.status(401).json({ error: '未授权访问' });
     }
 
-    // 使用系统临时目录
-    const uploadDir = os.tmpdir();
-    console.log('Using temp directory:', uploadDir);
+    const form = new IncomingForm();
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        console.error('Parse form error:', err);
+        return res.status(500).json({ error: '文件上传失败' });
+      }
 
-    const form = formidable({
-      uploadDir,
-      keepExtensions: true,
-      maxFileSize: 5 * 1024 * 1024, // 5MB
-    });
+      try {
+        const file = files.file[0];  // 获取上传的文件
+        const language = fields.language[0];  // 获取语言参数
 
-    return new Promise((resolve, reject) => {
-      form.parse(req, async (err, fields, files) => {
-        if (err) {
-          console.error('解析表单错误:', err);
-          res.status(500).json({ error: '文件上传失败' });
-          return resolve();
+        // 验证文件类型
+        if (file.mimetype !== 'application/pdf') {
+          return res.status(400).json({ error: '只支持 PDF 文件' });
         }
 
-        const file = files.file?.[0];
-        const language = fields.language?.[0] || 'zh';
+        // 创建上传目录
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'resumes');
+        await fs.mkdir(uploadDir, { recursive: true });
 
-        if (!file) {
-          res.status(400).json({ error: '没有找到文件' });
-          return resolve();
-        }
+        // 生成文件名
+        const fileName = `resume_${language}.pdf`;
+        const filePath = path.join(uploadDir, fileName);
 
-        try {
-          // 读取文件内容
-          const fileContent = await fs.promises.readFile(file.filepath);
+        // 保存文件
+        await fs.copyFile(file.filepath, filePath);
 
-          // 更新数据库，存储文件内容为 Base64
-          const { db } = await connectToDatabase();
-          await db.collection('settings').updateOne(
-            { key: 'resume' },
-            {
-              $set: {
-                [`content_${language}`]: fileContent.toString('base64'),
-                [`filename_${language}`]: `resume_${language}.pdf`,
-                contentType: 'application/pdf',
-                updatedAt: new Date()
-              }
-            },
-            { upsert: true }
-          );
+        // 更新数据库中的简历路径
+        const { db } = await connectToDatabase();
+        await db.collection('settings').updateOne(
+          { key: 'resumes' },
+          {
+            $set: {
+              [language]: `/uploads/resumes/${fileName}`,
+              updatedAt: new Date().toISOString()
+            }
+          },
+          { upsert: true }
+        );
 
-          // 清理临时文件
-          try {
-            await fs.promises.unlink(file.filepath);
-          } catch (err) {
-            console.error('清理临时文件失败:', err);
-          }
-
-          res.status(200).json({ 
-            success: true,
-            message: '简历上传成功'
-          });
-          resolve();
-        } catch (error) {
-          console.error('文件处理错误:', error);
-          res.status(500).json({ error: '文件处理失败' });
-          resolve();
-        }
-      });
+        return res.status(200).json({
+          success: true,
+          message: '简历上传成功',
+          path: `/uploads/resumes/${fileName}`
+        });
+      } catch (error) {
+        console.error('File processing error:', error);
+        return res.status(500).json({ error: '文件处理失败' });
+      }
     });
   } catch (error) {
-    console.error('上传错误:', error);
-    res.status(500).json({ error: '上传失败' });
+    console.error('Upload error:', error);
+    return res.status(500).json({ error: '上传失败' });
   }
 } 
