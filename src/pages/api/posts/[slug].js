@@ -1,5 +1,6 @@
 import { connectToDatabase } from '../../../lib/db';
 import { isAdmin } from '../../../lib/auth';
+import { ObjectId } from 'mongodb';
 
 export default async function handler(req, res) {
   if (!['GET', 'PUT', 'DELETE'].includes(req.method)) {
@@ -38,8 +39,15 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      await db.collection('posts').deleteOne({ slug });
-      return res.status(200).json({ message: '删除成功' });
+      const result = await db.collection('posts').deleteOne({
+        _id: new ObjectId(slug)
+      });
+
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ error: '文章不存在' });
+      }
+
+      return res.status(200).json({ message: '文章删除成功' });
     }
   } catch (error) {
     console.error('API error:', error);
