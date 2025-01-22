@@ -1,19 +1,22 @@
-import { Toaster } from 'react-hot-toast';
 import '../styles/globals.css';
-import { useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { initializeAdmin } from '../lib/auth';
 
-export default function MyApp({ Component, pageProps }) {
-  useEffect(() => {
-    console.log('Environment check:', {
-      MONGODB_URI: process.env.MONGODB_URI ? '存在' : '不存在',
-      MONGODB_DB: process.env.MONGODB_DB ? '存在' : '不存在',
-      NODE_ENV: process.env.NODE_ENV
-    });
-    
-    initializeAdmin().catch(console.error);
-  }, []);
+// 只在服务器端初始化
+if (typeof window === 'undefined') {
+  console.log('Environment check:', {
+    MONGODB_URI: process.env.MONGODB_URI ? '存在' : '不存在',
+    MONGODB_DB: process.env.MONGODB_DB ? '存在' : '不存在',
+    NODE_ENV: process.env.NODE_ENV
+  });
+}
 
+// 只在服务器端初始化管理员
+if (typeof window === 'undefined') {
+  initializeAdmin().catch(console.error);
+}
+
+function MyApp({ Component, pageProps }) {
   return (
     <>
       <Component {...pageProps} />
@@ -44,6 +47,8 @@ export default function MyApp({ Component, pageProps }) {
     </>
   );
 }
+
+export default MyApp;
 
 export function getServerSideProps({ req, res }) {
   res.setHeader(

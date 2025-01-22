@@ -6,266 +6,232 @@ import { toast } from 'react-hot-toast';
 import { marked } from 'marked';
 import Navbar from '../components/Navbar';
 import { FaFileDownload, FaGithub, FaLinkedin, FaEnvelope, FaEdit, FaSave } from 'react-icons/fa';
-import { isAdmin } from '../lib/auth';
 import { connectToDatabase } from '../lib/db';
-
-export async function getServerSideProps({ req }) {
-  const { db } = await connectToDatabase();
-  
-  // 获取简历路径和自我介绍
-  const resumeInfo = await db.collection('settings').findOne({ key: 'resume' });
-  const aboutInfo = await db.collection('settings').findOne({ key: 'about' });
-  
-  return {
-    props: {
-      isAdmin: isAdmin(req),
-      resumePath: resumeInfo?.path || null,
-      about: aboutInfo?.content || defaultAbout,
-      lastUpdated: aboutInfo?.updatedAt ? new Date(aboutInfo.updatedAt).toLocaleDateString() : null,
-    },
-  };
-}
+import { isAdmin } from '../lib/auth';
 
 const defaultAbout = `
-# 你好，我是 Aubur9y 👋
+# 你好，我是相祺 👋
 
-我是一名热爱技术的全栈开发者，专注于 Web 开发和人工智能应用。
+我是一名热爱技术的全栈开发者，专注于机器学习和数据工程，具备丰富的项目经验和实习经历。
 
 ## 技术栈
+### 编程语言: Python, Java, JavaScript, TypeScript
 
-- 前端：React, Next.js, TypeScript, Tailwind CSS
-- 后端：Node.js, Python, Django
-- 数据库：MongoDB, PostgreSQL
-- 其他：Docker, Git, Linux
+### 数据科学与机器学习: PyTorch, Scikit-learn, Pandas, NumPy
+
+### 数据工程与大数据: Apache Airflow, MySQL, MongoDB, Spark
+
+### 工具与框架: Docker, Git, Kubernetes, Jenkins
 
 ## 工作经历
-
-- 2023 - 至今：某公司，全栈开发工程师
-- 2021 - 2023：某公司，前端开发工程师
+- Zilliz | 市场营销实习生（研究方向）
+- MCM CHINA | 信息技术实习生
+- 思杰系统解决方案 | 软件开发实习生
 
 ## 教育背景
+### 帝国理工学院（QS 2）
+2024年09月 - 2025年11月
+环境数据科学与机器学习 硕士
 
-- 2017 - 2021：某大学，计算机科学与技术专业
+### 曼彻斯特大学（QS 34）
+2021年09月 - 2024年07月
+计算机科学 本科
+荣誉：一等奖等学位 (GPA: 3.7/4.0)
 
 ## 联系方式
-
 欢迎通过以下方式联系我：
-- Email: example@example.com
-- GitHub: @Aubur9y
+
+- Email: qixiang.aubury@gmail.com
+- GitHub: Aubur9y
+- 领英: qixiang1
 `;
 
-export default function About({ isAdmin, resumePath, about, lastUpdated }) {
-  const [showResume, setShowResume] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+export default function About({ about, resumePath, isAdmin: isAdminUser, lastUpdated }) {
+  console.log('Admin status:', isAdminUser);
+
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(about);
+  const [content, setContent] = useState(about?.content || defaultAbout);
 
   const handleResumeUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== 'application/pdf') {
-      toast.error('请上传 PDF 格式的文件');
-      return;
-    }
-
-    setIsUploading(true);
     const formData = new FormData();
-    formData.append('resume', file);
+    formData.append('file', file);
 
     try {
-      const res = await fetch('/api/resume/upload', {
+      const response = await fetch('/api/upload/resume', {
         method: 'POST',
         body: formData,
       });
 
-      if (!res.ok) throw new Error('上传失败');
+      if (!response.ok) throw new Error('上传失败');
 
+      const data = await response.json();
       toast.success('简历上传成功');
-      window.location.reload(); // 刷新页面以显示新简历
+      window.location.reload();
     } catch (error) {
-      toast.error('上传失败：' + error.message);
-    } finally {
-      setIsUploading(false);
+      console.error('Upload error:', error);
+      toast.error('简历上传失败');
     }
   };
 
-  const handleSaveAbout = async () => {
+  const handleSave = async () => {
     try {
-      const res = await fetch('/api/about/update', {
+      const response = await fetch('/api/about', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: editContent }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
       });
 
-      if (!res.ok) throw new Error('更新失败');
+      if (!response.ok) throw new Error('保存失败');
 
-      toast.success('更新成功');
+      toast.success('保存成功');
       setIsEditing(false);
-      window.location.reload(); // 刷新页面以显示新内容
+      window.location.reload();
     } catch (error) {
-      toast.error('更新失败：' + error.message);
+      console.error('Save error:', error);
+      toast.error('保存失败');
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Head>
-        <title>关于我 | 个人网站</title>
+        <title>关于我 | 我的个人网站</title>
         <meta name="description" content="了解更多关于我的信息" />
       </Head>
 
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        {!showResume ? (
-          // 显示"关于我"的内容
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-md p-8">
-              {/* 头部信息 */}
-              <div className="flex items-center justify-between mb-8">
-                <h1 className="text-4xl font-bold">关于我</h1>
-                <div className="flex items-center gap-4">
-                  {isAdmin && (
-                    <>
-                      {isEditing ? (
-                        <button
-                          onClick={handleSaveAbout}
-                          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                        >
-                          <FaSave />
-                          保存
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => setIsEditing(true)}
-                          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                        >
-                          <FaEdit />
-                          编辑
-                        </button>
-                      )}
-                      <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                        上传简历
-                        <input
-                          type="file"
-                          accept=".pdf"
-                          className="hidden"
-                          onChange={handleResumeUpload}
-                          disabled={isUploading}
-                        />
-                      </label>
-                    </>
-                  )}
-                  {resumePath && (
-                    <div className="flex gap-4">
-                      <button
-                        onClick={() => setShowResume(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        查看简历
-                      </button>
-                      <Link
-                        href={resumePath}
-                        download="resume.pdf"
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                      >
-                        <FaFileDownload className="w-5 h-5" />
-                        下载简历
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 自我介绍 */}
-              <div className="prose max-w-none">
-                {isEditing ? (
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full h-[500px] p-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="使用 Markdown 格式编写..."
-                  />
-                ) : (
-                  <div 
-                    dangerouslySetInnerHTML={{ 
-                      __html: marked(about, { breaks: true }) 
-                    }} 
-                  />
-                )}
-              </div>
-
-              {/* 最后更新时间 */}
-              {lastUpdated && (
-                <div className="mt-8 text-sm text-gray-500">
-                  最后更新：{lastUpdated}
-                </div>
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
+          {/* 管理按钮组 */}
+          {isAdminUser && (
+            <div className="mb-8 flex justify-end space-x-4">
+              {isEditing ? (
+                <button
+                  onClick={handleSave}
+                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <FaSave className="mr-2" />
+                  保存
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <FaEdit className="mr-2" />
+                  编辑
+                </button>
               )}
-
-              {/* 社交链接 */}
-              <div className="mt-8 flex gap-4">
-                <Link
-                  href="https://github.com/Aubur9y"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <FaGithub size={24} />
-                </Link>
-                <Link
-                  href="mailto:example@example.com"
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <FaEnvelope size={24} />
-                </Link>
-              </div>
             </div>
-          </div>
-        ) : (
-          // 显示简历预览
-          <div className="max-w-6xl mx-auto">
-            <div className="bg-white rounded-lg shadow-md p-4">
-              {/* 简历预览头部 */}
-              <div className="flex justify-between items-center mb-4 bg-white sticky top-0 z-10 p-4 shadow-md">
-                <h2 className="text-2xl font-bold">我的简历</h2>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setShowResume(false)}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    返回
-                  </button>
-                  <Link
-                    href={resumePath}
-                    download="resume.pdf"
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    <FaFileDownload className="w-5 h-5" />
-                    下载简历
-                  </Link>
-                </div>
-              </div>
+          )}
 
-              {/* 简历预览 */}
-              <div className="w-full bg-gray-100">
-                <iframe
-                  src={`${resumePath}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                  className="w-full h-[calc(100vh-12rem)] border-0 rounded-lg bg-white shadow-md"
-                  title="简历预览"
-                />
-              </div>
+          {/* 简历按钮组 */}
+          {resumePath && (
+            <div className="mb-8 flex justify-end space-x-4">
+              <Link
+                href="/resume"
+                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                <FaFileDownload className="mr-2" />
+                查看简历
+              </Link>
+              <Link
+                href={resumePath}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <FaFileDownload className="mr-2" />
+                下载简历
+              </Link>
+              {isAdminUser && (
+                <label className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
+                  <FaFileDownload className="mr-2" />
+                  上传简历
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf"
+                    onChange={handleResumeUpload}
+                  />
+                </label>
+              )}
             </div>
-          </div>
-        )}
+          )}
+
+          {/* 内容区域 */}
+          {isEditing ? (
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full h-[600px] p-4 border rounded font-mono"
+            />
+          ) : (
+            <div 
+              className="prose prose-lg max-w-none"
+              dangerouslySetInnerHTML={{ 
+                __html: marked(content, { breaks: true }) 
+              }} 
+            />
+          )}
+
+          {/* 最后更新时间 */}
+          {lastUpdated && (
+            <div className="mt-8 text-sm text-gray-500">
+              最后更新：{lastUpdated}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
+}
+
+export async function getStaticProps() {
+  try {
+    const { db } = await connectToDatabase();
+    if (!db) {
+      console.error('Database connection failed');
+      return {
+        props: {
+          about: { content: defaultAbout },
+          resumePath: null,
+          lastUpdated: null,
+          isAdmin: false
+        },
+        revalidate: 60
+      };
+    }
+
+    // 获取数据
+    const about = await db.collection('about').findOne({});
+    const resumeInfo = await db.collection('settings').findOne({ key: 'resume' });
+    
+    return {
+      props: {
+        about: about ? JSON.parse(JSON.stringify(about)) : { content: defaultAbout },
+        resumePath: resumeInfo?.path || null,
+        lastUpdated: about?.updatedAt ? new Date(about.updatedAt).toLocaleDateString() : null,
+        isAdmin: true
+      },
+      revalidate: 60
+    };
+  } catch (error) {
+    console.error('Error in getStaticProps:', error);
+    return {
+      props: {
+        about: { content: defaultAbout },
+        resumePath: null,
+        lastUpdated: null,
+        isAdmin: false
+      },
+      revalidate: 60
+    };
+  }
 } 

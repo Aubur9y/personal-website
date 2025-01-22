@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import Cookies from 'js-cookie';
 import { connectToDatabase } from './db';
 import bcrypt from 'bcryptjs';
+import cookie from 'cookie';
 
 export const ROLES = {
   USER: 'user',
@@ -130,21 +131,30 @@ export function removeAuthCookie() {
 
 // 添加初始化函数
 export async function initializeAdmin() {
-  const { db } = await connectToDatabase();
-  
-  // 检查是否已存在管理员
-  const adminExists = await db.collection('users').findOne({
-    email: process.env.DEFAULT_ADMIN_EMAIL,
-    role: ROLES.ADMIN
-  });
+  // 只在服务器端运行
+  if (typeof window !== 'undefined') {
+    return;
+  }
 
-  if (!adminExists) {
-    // 创建默认管理员账号
-    await createUser({
-      email: process.env.DEFAULT_ADMIN_EMAIL,
-      password: process.env.DEFAULT_ADMIN_PASSWORD,
-      name: 'Admin',
-      role: ROLES.ADMIN  // 强制设置为管理员角色
-    });
+  try {
+    const { db } = await connectToDatabase();
+    if (!db) {
+      console.log('数据库连接失败，跳过管理员初始化');
+      return;
+    }
+
+    const adminExists = await db.collection('users').findOne({ role: 'admin' });
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD, 10);
+      await db.collection('users').insertOne({
+        email: process.env.DEFAULT_ADMIN_EMAIL,
+        password: hashedPassword,
+        role: 'admin',
+        createdAt: new Date(),
+      });
+      console.log('管理员账号已初始化');
+    }
+  } catch (error) {
+    console.error('初始化管理员失败:', error);
   }
 } 
