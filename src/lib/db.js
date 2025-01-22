@@ -24,7 +24,15 @@ export async function connectToDatabase() {
     return { client: cachedClient, db: cachedDb };
   }
 
-  const client = await MongoClient.connect(MONGODB_URI);
+  const client = await MongoClient.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    // 禁用可选功能
+    monitorCommands: false,
+    autoEncryption: false,
+    maxPoolSize: 1,
+  });
+
   const db = client.db(MONGODB_DB);
 
   cachedClient = client;

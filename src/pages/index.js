@@ -158,4 +158,10 @@ export default function Home() {
       </main>
     </div>
   );
+}
+
+export async function getStaticProps() {
+  return {
+    props: {}
+  };
 } 

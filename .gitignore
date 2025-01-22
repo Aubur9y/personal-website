@@ -1,3 +1,10 @@
+# env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
 # dependencies
 /node_modules
 /.pnp
@@ -27,6 +34,10 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
 
 # uploads
 public/uploads

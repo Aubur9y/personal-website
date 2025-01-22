@@ -8,6 +8,11 @@ export const blogPosts = [
     slug: "building-modern-blog-system",
     tags: ["Next.js", "React", "Tailwind CSS", "MDX"],
     readTime: 8,
+    author: {
+      name: "作者名字",
+      avatar: "/images/avatar.jpg",
+      bio: "作者简介"
+    },
     content: `
 # 构建现代化的个人博客系统
 

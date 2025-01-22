@@ -11,11 +11,8 @@ import ReadingProgress from '../../components/ReadingProgress';
 import MarkdownContent from '../../components/MarkdownContent';
 import Comments from '../../components/Comments';
 
-export default function BlogPost() {
+export default function BlogPost({ post }) {
   const router = useRouter();
-  const { slug } = router.query;
-
-  const post = blogPosts.find(post => post.slug === slug);
 
   if (router.isFallback) {
     return <div>Loading...</div>;
@@ -136,20 +133,48 @@ export default function BlogPost() {
   );
 }
 
-// 添加静态页面生成
+// 修改 getStaticPaths
 export async function getStaticPaths() {
-  return {
-    paths: blogPosts.map(post => ({
-      params: { slug: post.slug }
-    })),
-    fallback: false
-  };
+  try {
+    const paths = blogPosts.map(post => ({
+      params: { slug: post.slug || '' }
+    }));
+
+    return {
+      paths,
+      fallback: 'blocking'  // 改为 blocking
+    };
+  } catch (error) {
+    console.error('Error in getStaticPaths:', error);
+    return {
+      paths: [],
+      fallback: 'blocking'
+    };
+  }
 }
 
+// 修改 getStaticProps
 export async function getStaticProps({ params }) {
-  const post = blogPosts.find(post => post.slug === params.slug);
-  return {
-    props: { post },
-    revalidate: 3600
-  };
+  try {
+    const post = blogPosts.find(post => post.slug === params.slug);
+    
+    if (!post) {
+      return {
+        notFound: true,
+        revalidate: false
+      };
+    }
+
+    return {
+      props: {
+        post: JSON.parse(JSON.stringify(post))
+      },
+      revalidate: false
+    };
+  } catch (error) {
+    return {
+      notFound: true,
+      revalidate: false
+    };
+  }
 } 

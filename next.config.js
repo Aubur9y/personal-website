@@ -2,59 +2,55 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  
+  // 图片配置
   images: {
+    unoptimized: true,
     domains: ['localhost', 'api.dicebear.com'],
-    unoptimized: false,
-    deviceSizes: [640, 750, 828, 1080, 1200],
-    imageSizes: [16, 32, 48, 64, 96],
   },
-  env: {
-    MONGODB_URI: process.env.MONGODB_URI,
-    MONGODB_DB: process.env.MONGODB_DB,
-    JWT_SECRET: process.env.JWT_SECRET,
-  },
-  // 添加这个配置以支持 MongoDB
+
+  // 禁用优化
+  optimizeFonts: false,
+  optimizeCss: false,
+  poweredByHeader: false,
+  
+  // 修改 webpack 配置
   webpack: (config, { isServer }) => {
+    // MongoDB 配置
     if (!isServer) {
-      // 客户端打包配置
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        net: false,
-        tls: false,
-        fs: false,
-        dns: false,
-        child_process: false,
-        aws4: false,
-        'timers/promises': false,
-        crypto: false,
-        stream: false,
-        util: false,
-        buffer: false,
-        events: false,
-        assert: false,
-        http: false,
-        https: false,
-        os: false,
-        url: false,
-        zlib: false,
-        path: false,
+        mongodb: false,
+        'mongodb-client-encryption': false,
+        'kerberos': false,
+        '@mongodb-js/zstd': false,
+        'snappy': false,
+        'aws4': false,
+        '@aws-sdk/credential-providers': false,
+        'gcp-metadata': false,
+        'socks': false,
       };
     }
-
-    config.experiments = { ...config.experiments, topLevelAwait: true };
     return config;
   },
+
+  // Vercel 特定配置
+  output: 'standalone',
   experimental: {
-    serverComponentsExternalPackages: ['formidable'],
-    scrollRestoration: true,
-    optimizeCss: true,
+    // MongoDB 支持
+    serverComponentsExternalPackages: ['mongodb'],
+    esmExternals: 'loose',
   },
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
-  // 性能优化
-  poweredByHeader: false,
-  compress: true,
+
+  // 禁用静态导出
+  trailingSlash: false,
+  exportPathMap: null,
+
+  // 添加这些配置
+  distDir: '.next',
+  generateBuildId: async () => 'build',
+  generateEtags: false,
+  pageExtensions: ['js', 'jsx'],
 };
 
 module.exports = nextConfig; 
