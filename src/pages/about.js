@@ -343,15 +343,16 @@ export default function About({ about, resumePaths, isAdmin: isAdminUser, lastUp
                 {showResume ? translations.about.hideResume : translations.about.viewResume}
               </button>
               {currentResumePath && (
-                <Link
-                  href={currentResumePath}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <FaFileDownload className="mr-2" />
-                  {translations.about.downloadResume}
-                </Link>
+                <div className="mt-4">
+                  <Link
+                    href={`/api/resume/resume.pdf`}
+                    target="_blank"
+                    className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                  >
+                    <FaFileDownload className="mr-2" />
+                    {translations?.about?.viewResume || '查看简历'}
+                  </Link>
+                </div>
               )}
               {isAdminUser && (
                 <label className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
