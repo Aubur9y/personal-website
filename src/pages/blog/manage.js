@@ -3,8 +3,10 @@ import { toast } from 'react-hot-toast';
 import { FaTrash, FaEdit } from 'react-icons/fa';
 import { useRouter } from 'next/router';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { connectToDatabase } from '../../lib/db';
+import { isAdmin } from '../../lib/auth';
 
-export default function ManagePosts({ posts: initialPosts }) {
+export default function ManagePosts({ posts: initialPosts = [] }) {
   const [posts, setPosts] = useState(initialPosts);
   const router = useRouter();
   const { translations } = useLanguage();
@@ -87,4 +89,36 @@ export default function ManagePosts({ posts: initialPosts }) {
       </main>
     </div>
   );
+}
+
+export async function getServerSideProps(context) {
+  if (!isAdmin(context.req)) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  try {
+    const { db } = await connectToDatabase();
+    const posts = await db.collection('posts')
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return {
+      props: {
+        posts: JSON.parse(JSON.stringify(posts)),
+      },
+    };
+  } catch (error) {
+    console.error('Failed to fetch posts:', error);
+    return {
+      props: {
+        posts: [],
+      },
+    };
+  }
 } 
