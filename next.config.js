@@ -37,6 +37,19 @@ const nextConfig = {
       };
     }
 
+    // MongoDB 可选依赖警告处理
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'mongodb-client-encryption': false,
+        'bson-ext': false,
+        'kerberos': false,
+        'snappy': false,
+        'aws4': false,
+        '@mongodb-js/zstd': false,
+      };
+    }
+
     return config;
   },
 

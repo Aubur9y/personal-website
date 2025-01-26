@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { toast } from 'react-hot-toast';
@@ -22,6 +22,7 @@ export default function NewPost() {
   const { lang } = useLanguage();
   const { isAdmin } = useAuth();
   const [isPreview, setIsPreview] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const [post, setPost] = useState({
     title: '',
     slug: '',
@@ -36,9 +37,21 @@ export default function NewPost() {
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState({});
 
-  // 如果不是管理员，重定向到博客首页
+  // 使用 useEffect 处理客户端重定向
+  useEffect(() => {
+    setIsClient(true);
+    if (!isAdmin) {
+      router.push('/blog');
+    }
+  }, [isAdmin, router]);
+
+  // 如果在服务器端或者还未确认客户端状态，返回 null
+  if (!isClient) {
+    return null;
+  }
+
+  // 如果不是管理员，不渲染内容
   if (!isAdmin) {
-    router.push('/blog');
     return null;
   }
 
