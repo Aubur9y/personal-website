@@ -9,7 +9,10 @@ export default async function handler(req, res) {
     const user = getAuthUser(req);
     
     if (!user) {
-      return res.status(401).json({ message: '未登录' });
+      return res.status(200).json({
+        authenticated: false,
+        user: null
+      });
     }
 
     res.status(200).json({
@@ -23,6 +26,10 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Get user error:', error);
-    res.status(401).json({ message: '认证失败' });
+    res.status(200).json({
+      authenticated: false,
+      user: null,
+      error: '认证检查失败'
+    });
   }
 } 

@@ -104,21 +104,21 @@ export function generateToken(user) {
 export function verifyToken(req) {
   try {
     if (!req?.headers?.cookie) {
-      throw new Error('未找到认证令牌');
+      return null;
     }
 
     const cookies = cookie.parse(req.headers.cookie);
     const token = cookies.auth;
 
     if (!token) {
-      throw new Error('未找到认证令牌');
+      return null;
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     return decoded;
   } catch (error) {
     console.error('Token verification error:', error);
-    throw new Error('认证失败');
+    return null;
   }
 }
 
@@ -127,7 +127,8 @@ export function getAuthUser(req) {
     if (!req?.headers?.cookie) {
       return null;
     }
-    return verifyToken(req);
+    const user = verifyToken(req);
+    return user;
   } catch (error) {
     console.error('Get auth user error:', error);
     return null;

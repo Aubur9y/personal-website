@@ -1,32 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { toast } from 'react-hot-toast';
-import { isAdmin } from '../lib/auth';
 import LanguageSwitch from './LanguageSwitch';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Navbar() {
-  const [isAdminUser, setIsAdminUser] = useState(false);
   const router = useRouter();
   const { translations } = useLanguage();
-
-  useEffect(() => {
-    const checkAdmin = async () => {
-      const res = await fetch('/api/auth/check');
-      const data = await res.json();
-      setIsAdminUser(data.isAdmin);
-    };
-    checkAdmin();
-  }, []);
+  const { isAdmin, logout } = useAuth();
 
   const handleLogout = async () => {
     try {
-      const res = await fetch('/api/auth/logout', { method: 'POST' });
-      if (!res.ok) throw new Error('登出失败');
-      
+      await logout();
       toast.success('已登出');
-      setIsAdminUser(false);
       router.push('/');
     } catch (error) {
       toast.error('登出失败');
@@ -63,7 +51,7 @@ export default function Navbar() {
           {/* 用户操作 */}
           <div className="flex items-center gap-4">
             <LanguageSwitch />
-            {isAdminUser ? (
+            {isAdmin ? (
               <button
                 onClick={handleLogout}
                 className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"

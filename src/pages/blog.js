@@ -1,17 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState } from 'react';
 import Head from 'next/head'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
 import Navbar from '../components/Navbar'
-import BlogCard from '../components/BlogCard'
-import SearchBar from '../components/SearchBar'
-import CategoryFilter from '../components/CategoryFilter'
-import SortSelector from '../components/SortSelector'
-import TagFilter from '../components/TagFilter'
-import { blogPosts } from '../data/blogPosts'
-import { isAdmin } from '../lib/auth'
 import { useLanguage } from '../contexts/LanguageContext'
-import { connectToDatabase } from '../lib/db'
 import { motion } from 'framer-motion';
 
 export default function Blog() {
@@ -35,7 +25,7 @@ export default function Blog() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <Head>
-        <title>{translations?.blog?.title || (lang === 'en' ? 'Blog' : '博客')} - {lang === 'en' ? 'Maintenance' : '维护中'}</title>
+        <title>{`${translations?.blog?.title || (lang === 'en' ? 'Blog' : '博客')} - ${lang === 'en' ? 'Maintenance' : '维护中'}`}</title>
         <meta name="description" content={content.description} />
       </Head>
 
@@ -62,35 +52,4 @@ export default function Blog() {
       </main>
     </div>
   );
-}
-
-export async function getServerSideProps() {
-  try {
-    const { db } = await connectToDatabase();
-    if (!db) {
-      return {
-        props: {
-          posts: []
-        }
-      };
-    }
-
-    const posts = await db.collection('posts')
-      .find({})
-      .sort({ date: -1 })
-      .toArray();
-
-    return {
-      props: {
-        posts: JSON.parse(JSON.stringify(posts))
-      }
-    };
-  } catch (error) {
-    console.error('Error fetching posts:', error);
-    return {
-      props: {
-        posts: []
-      }
-    };
-  }
 } 
