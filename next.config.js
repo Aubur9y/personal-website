@@ -33,10 +33,10 @@ const nextConfig = {
       // 在客户端构建中忽略这些模块
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        net: false,
-        tls: false,
         fs: false,
         dns: false,
+        net: false,
+        tls: false,
         child_process: false,
         'timers/promises': false,
         'mongodb-client-encryption': false,
