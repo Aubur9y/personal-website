@@ -1,190 +1,174 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { FaSave, FaEdit } from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
-import marked from 'marked';
+import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { FaEdit, FaArrowLeft } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
-import ImageWithFallback from '../../components/ImageWithFallback';
-import ShareButtons from '../../components/ShareButtons';
-import { blogPosts } from '../../data/blogPosts';
-import TableOfContents from '../../components/TableOfContents';
-import PostNavigation from '../../components/PostNavigation';
-import ReadingProgress from '../../components/ReadingProgress';
-import MarkdownContent from '../../components/MarkdownContent';
-import Comments from '../../components/Comments';
-import { connectToDatabase } from '../../lib/db';
-import { isAdmin } from '../../lib/auth';
 import { useLanguage } from '../../contexts/LanguageContext';
-import Image from 'next/image';
+import { useAuth } from '../../contexts/AuthContext';
+import { connectToDatabase } from '../../lib/db';
+import { marked } from 'marked';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github-dark.css';
 
-export default function BlogPost() {
+// 配置 marked
+marked.setOptions({
+  highlight: function(code, lang) {
+    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+    return hljs.highlight(code, { language }).value;
+  },
+  langPrefix: 'hljs language-',
+  gfm: true,
+  breaks: true
+});
+
+export default function BlogPost({ post }) {
   const router = useRouter();
-  const { slug } = router.query;
-  const { translations, lang } = useLanguage();
-  const [post, setPost] = useState(null);
+  const { lang } = useLanguage();
+  const { isAdmin } = useAuth();
 
-  useEffect(() => {
-    if (slug) {
-      const currentPost = blogPosts.find(p => p.slug === slug);
-      if (!currentPost) {
-        router.push('/404');
-        return;
-      }
-      setPost(currentPost);
-    }
-  }, [slug, router]);
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [content, setContent] = useState(post?.content || '');
-
-  const handleSave = async () => {
-    try {
-      const response = await fetch(`/api/posts/${post.slug}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      });
-
-      if (!response.ok) throw new Error('保存失败');
-
-      toast.success('保存成功');
-      setIsEditing(false);
-      router.reload();
-    } catch (error) {
-      console.error('Save error:', error);
-      toast.error('保存失败');
-    }
-  };
-
-  const maintenanceText = {
-    zh: {
-      title: '🚧 博客系统维护中 🚧',
-      description: '您访问的文章暂时无法查看',
-      note: '正在为您跳转到博客主页...'
-    },
-    en: {
-      title: '🚧 Blog System Under Maintenance 🚧',
-      description: 'The article you are trying to access is temporarily unavailable',
-      note: 'Redirecting to blog homepage...'
-    }
-  };
-
-  const contentText = maintenanceText[lang] || maintenanceText.zh;
-
-  useEffect(() => {
-    // 3秒后重定向到博客主页
-    const timer = setTimeout(() => {
-      router.push('/blog');
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [router]);
-
-  if (!post) {
+  // 如果页面正在加载，显示加载状态
+  if (router.isFallback) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white">
-        <Head>
-          <title>{lang === 'en' ? 'Blog Maintenance' : '博客维护中'}</title>
-          <meta name="description" content={contentText.description} />
-        </Head>
-
+      <div className="min-h-screen bg-gray-50">
         <Navbar />
-
-        <main className="container mx-auto px-4 py-20">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-6">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-500">
-                {contentText.title}
-              </span>
-            </h1>
-            <p className="text-xl text-gray-300 mb-4">
-              {contentText.description}
-            </p>
-            <p className="text-gray-400">
-              {contentText.note}
-            </p>
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center text-gray-600">
+            {lang === 'zh' ? '加载中...' : 'Loading...'}
           </div>
-        </main>
+        </div>
       </div>
     );
   }
 
-  const pageTitle = `${post.title} | 博客`;
+  // 如果没有找到文章，显示404
+  if (!post) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center text-gray-600">
+            {lang === 'zh' ? '文章不存在' : 'Post not found'}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
       <Head>
-        <title>{pageTitle}</title>
+        <title>{post.title}</title>
         <meta name="description" content={post.excerpt} />
       </Head>
 
       <Navbar />
 
       <main className="container mx-auto px-4 py-12">
-        <article className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="relative h-64 w-full bg-gray-200">
-            <Image
-              src={post.coverImage || '/images/default-cover.jpg'}
-              alt={post.title}
-              width={1200}
-              height={630}
-              priority
-              className="object-cover"
-            />
+        <div className="max-w-4xl mx-auto">
+          {/* 返回按钮和编辑按钮 */}
+          <div className="flex justify-between items-center mb-8">
+            <Link
+              href="/blog"
+              className="inline-flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <FaArrowLeft className="mr-2" />
+              {lang === 'zh' ? '返回博客' : 'Back to Blog'}
+            </Link>
+            {isAdmin && (
+              <Link
+                href={`/blog/edit/${post.slug}`}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <FaEdit className="mr-2" />
+                {lang === 'zh' ? '编辑文章' : 'Edit Post'}
+              </Link>
+            )}
           </div>
-          
-          <div className="p-8">
-            <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
-            <div className="flex items-center text-gray-600 mb-8">
-              <span>{new Date(post.date).toLocaleDateString()}</span>
-              <span className="mx-2">•</span>
-              <span>{post.category}</span>
-              {post.readTime && (
-                <>
-                  <span className="mx-2">•</span>
-                  <span>{post.readTime} {translations.blog.readTime}</span>
-                </>
+
+          {/* 文章内容 */}
+          <article className="bg-white rounded-lg shadow-md overflow-hidden">
+            {/* 封面图片 */}
+            {post.coverImage && (
+              <div className="relative h-64 md:h-96">
+                <img
+                  src={post.coverImage}
+                  alt={post.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            <div className="p-6 md:p-8">
+              {/* 文章标题 */}
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                {post.title}
+              </h1>
+
+              {/* 文章元信息 */}
+              <div className="flex flex-wrap items-center text-sm text-gray-500 mb-8">
+                <span>{new Date(post.date).toLocaleDateString()}</span>
+                <span className="mx-2">•</span>
+                <span>{post.category}</span>
+                {post.readTime && (
+                  <>
+                    <span className="mx-2">•</span>
+                    <span>{post.readTime} min read</span>
+                  </>
+                )}
+              </div>
+
+              {/* 标签 */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-8">
+                  {post.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
               )}
+
+              {/* 文章内容 */}
+              <div 
+                className="prose prose-lg max-w-none"
+                dangerouslySetInnerHTML={{ __html: marked(post.content) }}
+              />
             </div>
-            
-            <div className="prose prose-lg max-w-none">
-              <MarkdownContent content={post.content} />
-            </div>
-          </div>
-        </article>
+          </article>
+        </div>
       </main>
     </div>
   );
 }
 
-export async function getStaticPaths() {
-  const paths = blogPosts.map((post) => ({
-    params: { slug: post.slug },
-  }));
+export async function getServerSideProps({ params }) {
+  try {
+    const { db } = await connectToDatabase();
+    const post = await db.collection('posts').findOne({ slug: params.slug });
 
-  return {
-    paths,
-    fallback: false,
-  };
-}
+    if (!post) {
+      return {
+        notFound: true
+      };
+    }
 
-export async function getStaticProps({ params }) {
-  const post = blogPosts.find((p) => p.slug === params.slug);
+    // 将 _id 转换为字符串，避免序列化错误
+    post._id = post._id.toString();
 
-  if (!post) {
     return {
-      notFound: true,
+      props: {
+        post: JSON.parse(JSON.stringify(post)) // 确保数据可以序列化
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    return {
+      notFound: true
     };
   }
-
-  return {
-    props: {
-      post,
-    },
-    revalidate: 60,
-  };
 } 
