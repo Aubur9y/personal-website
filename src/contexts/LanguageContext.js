@@ -5,7 +5,7 @@ import zh from '../locales/zh';
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState('zh');
+  const [lang, setLang] = useState('en');
   const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -14,11 +14,15 @@ export function LanguageProvider({ children }) {
     try {
       // 只在客户端执行
       if (typeof window !== 'undefined') {
-        const savedLang = localStorage.getItem('language') || 'zh';
-        setLang(savedLang);
+        const sessionLang = sessionStorage.getItem('language');
+        if (sessionLang) {
+          setLang(sessionLang);
+        } else {
+          sessionStorage.setItem('language', 'en');
+        }
       }
     } catch (error) {
-      console.error('Error accessing localStorage:', error);
+      console.error('Error accessing sessionStorage:', error);
     } finally {
       setIsLoading(false);
     }
@@ -30,7 +34,7 @@ export function LanguageProvider({ children }) {
     try {
       setLang(newLang);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('language', newLang);
+        sessionStorage.setItem('language', newLang);
       }
     } catch (error) {
       console.error('Error setting language:', error);
@@ -65,9 +69,9 @@ export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) {
     return {
-      lang: 'zh',
+      lang: 'en',
       setLang: () => {},
-      translations: zh,
+      translations: en,
       isLoading: true
     };
   }

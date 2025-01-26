@@ -1,164 +1,244 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { FaGithub, FaStar, FaCodeBranch } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { FaStar, FaCodeBranch, FaGithub, FaExternalLinkAlt } from 'react-icons/fa';
 import Navbar from '../components/Navbar';
 import { useLanguage } from '../contexts/LanguageContext';
-
-// 动画配置
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
-
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 }
-};
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 
 export default function Projects() {
-  const { lang, translations } = useLanguage();
-  const [repos, setRepos] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { translations, lang } = useLanguage();
+  const { isAdmin } = useAuth();
+  const [allProjects, setAllProjects] = useState([]); // 所有可选的项目
+  const [displayProjects, setDisplayProjects] = useState([]); // 当前显示的项目
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingProjects, setEditingProjects] = useState([]); // 编辑时的临时状态
 
-  useEffect(() => {
-    const fetchRepos = async () => {
-      try {
-        const response = await fetch('/api/github/repos');
-        if (!response.ok) throw new Error('获取项目失败');
-        const data = await response.json();
-        setRepos(data.repos);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
+  // 获取项目数据和配置
+  const fetchData = async () => {
+    try {
+      const [projectsRes, configRes] = await Promise.all([
+        fetch('/api/github/repos'),
+        fetch('/api/projects/config')
+      ]);
+      
+      const projectsData = await projectsRes.json();
+      const configData = await configRes.json();
+
+      if (!projectsData.success) {
+        throw new Error(projectsData.message || '获取项目失败');
       }
-    };
 
-    fetchRepos();
-  }, []);
+      setAllProjects(projectsData.repos);
 
-  // 语言标签的颜色映射
-  const languageColors = {
-    JavaScript: 'bg-yellow-100 text-yellow-800',
-    TypeScript: 'bg-blue-100 text-blue-800',
-    Python: 'bg-green-100 text-green-800',
-    Java: 'bg-red-100 text-red-800',
-    'C++': 'bg-purple-100 text-purple-800',
-    Go: 'bg-cyan-100 text-cyan-800',
-    Rust: 'bg-orange-100 text-orange-800',
-    default: 'bg-gray-100 text-gray-800'
+      // 根据配置显示项目
+      const orderedProjects = configData.order && configData.order.length > 0
+        ? configData.order
+            .map(id => projectsData.repos.find(p => p.id === id))
+            .filter(Boolean)
+        : [];
+      
+      setDisplayProjects(orderedProjects);
+      setEditingProjects(orderedProjects); // 初始化编辑状态
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error(lang === 'zh' ? '加载项目失败' : 'Failed to load projects');
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchData();
+  }, [lang]);
+
+  // 切换项目选择
+  const toggleProject = (project) => {
+    if (editingProjects.some(p => p.id === project.id)) {
+      setEditingProjects(prev => prev.filter(p => p.id !== project.id));
+    } else {
+      setEditingProjects(prev => [...prev, project]);
+    }
+  };
+
+  // 保存配置
+  const saveConfig = async () => {
+    try {
+      // 去重并保存
+      const uniqueProjects = editingProjects.filter((project, index) => 
+        editingProjects.findIndex(p => p.id === project.id) === index
+      );
+
+      await fetch('/api/projects/config', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          selectedProjects: uniqueProjects.map(p => p.id),
+          order: uniqueProjects.map(p => p.id)
+        }),
+        credentials: 'include'
+      });
+      
+      // 更新显示
+      setDisplayProjects(uniqueProjects);
+      toast.success(lang === 'zh' ? '保存成功' : 'Saved successfully');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving config:', error);
+      toast.error(lang === 'zh' ? '保存失败' : 'Failed to save');
+    }
+  };
+
+  // 处理拖拽结束
+  const onDragEnd = (result) => {
+    if (!result.destination || !isEditing) return;
+
+    const items = Array.from(editingProjects);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setEditingProjects(items);
+  };
+
+  // 取消编辑
+  const cancelEdit = () => {
+    setEditingProjects(displayProjects);
+    setIsEditing(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white">
+        <Navbar />
+        <div className="flex justify-center items-center h-[calc(100vh-4rem)]">
+          <div className="text-xl">{lang === 'zh' ? '加载中...' : 'Loading...'}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-900 text-white">
       <Head>
-        <title>{translations?.projects?.title || '项目'}</title>
-        <meta 
-          name="description" 
-          content={translations?.projects?.description || '我的开源项目展示'} 
-        />
+        <title>{translations.projects.title} | {translations.common.siteTitle}</title>
+        <meta name="description" content={translations.projects.description} />
       </Head>
 
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">
-            {translations?.projects?.title || '我的项目'}
+      <main className="container mx-auto px-4 py-12">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+            {translations.projects.title}
           </h1>
-
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            </div>
-          ) : error ? (
-            <div className="text-center text-red-600 py-8">
-              {error}
-            </div>
-          ) : (
-            <motion.div
-              variants={container}
-              initial="hidden"
-              animate="show"
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-            >
-              {repos.map((repo) => (
-                <motion.div
-                  key={repo.id}
-                  variants={item}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+          {isAdmin && (
+            <div className="space-x-4">
+              <button
+                onClick={() => isEditing ? cancelEdit() : setIsEditing(true)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+              >
+                {isEditing ? (translations.common.cancel) : (translations.common.edit)}
+              </button>
+              {isEditing && (
+                <button
+                  onClick={saveConfig}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md transition-colors"
                 >
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        {repo.name}
-                      </h2>
-                      <div className="flex items-center space-x-4">
-                        <a
-                          href={repo.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                          <FaGithub size={20} />
-                        </a>
-                        {repo.homepage && (
-                          <a
-                            href={repo.homepage}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
-                          >
-                            <FaExternalLinkAlt size={18} />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    <p className="text-gray-600 mb-4 h-12 line-clamp-2">
-                      {repo.description || (lang === 'zh' ? '暂无描述' : 'No description available')}
-                    </p>
-
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {repo.language && (
-                        <span className={`px-2 py-1 rounded-full text-sm ${languageColors[repo.language] || languageColors.default}`}>
-                          {repo.language}
-                        </span>
-                      )}
-                      {repo.topics?.slice(0, 3).map(topic => (
-                        <span key={topic} className="px-2 py-1 bg-blue-50 text-blue-600 rounded-full text-sm">
-                          {topic}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <FaStar className="mr-1 text-yellow-400" />
-                        <span>{repo.stars}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <FaCodeBranch className="mr-1" />
-                        <span>{repo.forks}</span>
-                      </div>
-                      <div className="text-gray-500">
-                        {new Date(repo.updatedAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
+                  {translations.common.save}
+                </button>
+              )}
+            </div>
           )}
         </div>
+
+        {isEditing ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allProjects.map(project => (
+              <div
+                key={project.id}
+                className={`p-6 rounded-lg border-2 transition-colors cursor-pointer ${
+                  editingProjects.some(p => p.id === project.id)
+                    ? 'border-blue-500 bg-gray-800'
+                    : 'border-gray-700 bg-gray-800 hover:border-gray-500'
+                }`}
+                onClick={() => toggleProject(project)}
+              >
+                <h3 className="text-xl font-semibold mb-2">{project.name}</h3>
+                <p className="text-gray-400 mb-4">{project.description}</p>
+                <div className="flex items-center space-x-4 text-gray-400">
+                  <span className="flex items-center">
+                    <FaStar className="mr-1" /> {project.stars}
+                  </span>
+                  <span className="flex items-center">
+                    <FaCodeBranch className="mr-1" /> {project.forks}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="projects" isDropDisabled={!isEditing}>
+              {(provided) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
+                  {(isEditing ? editingProjects : displayProjects).map((project, index) => (
+                    <Draggable
+                      key={project.id}
+                      draggableId={project.id.toString()}
+                      index={index}
+                      isDragDisabled={!isEditing}
+                    >
+                      {(provided, snapshot) => (
+                        <motion.div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          className={`p-6 rounded-lg bg-gray-800 border-2 ${
+                            snapshot.isDragging ? 'border-blue-500' : 'border-gray-700'
+                          }`}
+                        >
+                          <h3 className="text-xl font-semibold mb-2">
+                            <a
+                              href={project.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-blue-400 transition-colors flex items-center"
+                            >
+                              <FaGithub className="mr-2" />
+                              {project.name}
+                            </a>
+                          </h3>
+                          <p className="text-gray-400 mb-4">{project.description}</p>
+                          <div className="flex items-center space-x-4 text-gray-400">
+                            <span className="flex items-center">
+                              <FaStar className="mr-1" /> {project.stars}
+                            </span>
+                            <span className="flex items-center">
+                              <FaCodeBranch className="mr-1" /> {project.forks}
+                            </span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        )}
       </main>
     </div>
   );

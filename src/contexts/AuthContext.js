@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { toast } from 'react-hot-toast';
 
@@ -11,13 +11,25 @@ export function AuthProvider({ children }) {
 
   // 检查认证状态
   useEffect(() => {
-    checkAuth();
-  }, []);
+    const checkAuthStatus = async () => {
+      await checkAuth();
+    };
+    checkAuthStatus();
+  }, [router.pathname]); // 当路由变化时重新检查认证状态
 
   const checkAuth = async () => {
     try {
-      const res = await fetch('/api/auth/user');
+      console.log('Checking auth status...');
+      const res = await fetch('/api/auth/user', {
+        credentials: 'include', // 确保发送 cookies
+        headers: {
+          'Cache-Control': 'no-cache', // 禁用缓存
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await res.json();
+      
+      console.log('Auth check response:', data);
       
       if (data.authenticated && data.user) {
         console.log('User authenticated:', data.user);
@@ -34,6 +46,19 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // 更新用户状态并等待更新完成
+  const updateUserState = useCallback((newUser) => {
+    return new Promise(resolve => {
+      setUser(newUser);
+      // 使用 requestAnimationFrame 确保状态已更新
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolve();
+        });
+      });
+    });
+  }, []);
+
   // 登录
   const login = async (emailOrUsername, password) => {
     try {
@@ -41,7 +66,11 @@ export function AuthProvider({ children }) {
       
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache', // 禁用缓存
+          'Pragma': 'no-cache'
+        },
         body: JSON.stringify({ emailOrUsername, password }),
         credentials: 'include',
       });
@@ -55,7 +84,7 @@ export function AuthProvider({ children }) {
 
       if (data.success && data.user) {
         console.log('Setting user state:', data.user);
-        setUser(data.user);
+        await updateUserState(data.user);
         // 登录成功后立即检查认证状态
         await checkAuth();
         return { success: true, user: data.user };
@@ -64,7 +93,7 @@ export function AuthProvider({ children }) {
       throw new Error(data.message || '登录响应格式错误');
     } catch (error) {
       console.error('Login failed:', error);
-      setUser(null);
+      await updateUserState(null);
       throw error;
     }
   };
@@ -74,14 +103,18 @@ export function AuthProvider({ children }) {
     try {
       const res = await fetch('/api/auth/logout', {
         method: 'POST',
-        credentials: 'include', // 确保包含 cookies
+        credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache', // 禁用缓存
+          'Pragma': 'no-cache'
+        }
       });
 
       if (!res.ok) {
         throw new Error('登出失败');
       }
 
-      setUser(null);
+      await updateUserState(null);
       router.replace('/');
     } catch (error) {
       console.error('Logout failed:', error);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { toast } from 'react-hot-toast';
@@ -10,16 +10,6 @@ export default function Login() {
   const { login, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const [redirectAttempted, setRedirectAttempted] = useState(false);
-
-  // 如果已经登录，重定向到目标页面
-  useEffect(() => {
-    if (isAuthenticated && !redirectAttempted) {
-      setRedirectAttempted(true);
-      const redirectTo = router.query.redirect || '/admin/posts';
-      router.replace(redirectTo, undefined, { shallow: true });
-    }
-  }, [isAuthenticated, router, redirectAttempted]);
 
   const [formData, setFormData] = useState({
     emailOrUsername: '',
@@ -31,16 +21,17 @@ export default function Login() {
     if (isLoading) return;
     
     setIsLoading(true);
-    setRedirectAttempted(false);
 
     try {
       const result = await login(formData.emailOrUsername, formData.password);
       if (result.success) {
         toast.success('登录成功');
-        // 等待一小段时间确保状态更新
-        await new Promise(resolve => setTimeout(resolve, 100));
-        const redirectTo = router.query.redirect || '/admin/posts';
-        window.location.href = redirectTo;
+        // 等待足够长的时间确保 cookie 和状态都设置完成
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 使用硬刷新跳转到首页
+        window.location.href = '/';
+        // 强制刷新
+        window.location.reload(true);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -50,7 +41,7 @@ export default function Login() {
   };
 
   // 如果已经登录，显示加载状态
-  if (isAuthenticated && redirectAttempted) {
+  if (isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">
         <div className="text-xl font-semibold text-gray-700">正在跳转...</div>
