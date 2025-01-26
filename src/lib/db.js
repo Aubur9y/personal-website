@@ -1,7 +1,11 @@
 import { MongoClient } from 'mongodb';
 
-// 只在服务器端检查环境变量
+// 只在服务器端检查环境变量和初始化数据库连接
+let cachedClient = null;
+let cachedDb = null;
+
 if (typeof window === 'undefined') {
+  // 服务器端代码
   if (!process.env.MONGODB_URI) {
     throw new Error('请在环境变量中定义 MONGODB_URI');
   }
@@ -10,30 +14,47 @@ if (typeof window === 'undefined') {
   }
 }
 
-const MONGODB_URI = process.env.MONGODB_URI;
-const MONGODB_DB = process.env.MONGODB_DB;
-
-let cachedClient = null;
-let cachedDb = null;
+const options = {
+  maxPoolSize: 10,
+  minPoolSize: 5,
+  maxIdleTimeMS: 60000,
+  connectTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  retryWrites: true,
+  w: 'majority'
+};
 
 export async function connectToDatabase() {
-  // 如果已经有缓存的连接，直接返回
-  if (cachedClient && cachedDb) {
-    return { client: cachedClient, db: cachedDb };
-  }
-
-  // 客户端不需要连接数据库
+  // 如果在客户端，返回 null
   if (typeof window !== 'undefined') {
     return { client: null, db: null };
   }
 
   try {
-    // 创建新的连接
-    const client = await MongoClient.connect(MONGODB_URI, {
-      maxPoolSize: 10
-    });
+    // 如果已经有缓存的连接，先检查连接是否有效
+    if (cachedClient && cachedDb) {
+      try {
+        // 测试连接是否有效
+        await cachedDb.command({ ping: 1 });
+        return { client: cachedClient, db: cachedDb };
+      } catch (error) {
+        console.log('Cached connection is invalid, creating new connection...');
+        // 如果连接无效，关闭旧连接
+        try {
+          await cachedClient.close();
+        } catch (closeError) {
+          console.error('Error closing invalid connection:', closeError);
+        }
+        cachedClient = null;
+        cachedDb = null;
+      }
+    }
 
-    const db = client.db(MONGODB_DB);
+    // 创建新的连接
+    const client = await MongoClient.connect(process.env.MONGODB_URI, options);
+    const db = client.db(process.env.MONGODB_DB);
 
     // 缓存连接
     cachedClient = client;
@@ -49,6 +70,8 @@ export async function connectToDatabase() {
 
 // 添加关闭连接的函数
 export async function closeConnection() {
+  if (typeof window !== 'undefined') return;
+
   try {
     if (cachedClient) {
       await cachedClient.close();
@@ -64,8 +87,11 @@ export async function closeConnection() {
 
 // 添加健康检查函数
 export async function checkConnection() {
+  if (typeof window !== 'undefined') return false;
+
   try {
     const { db } = await connectToDatabase();
+    if (!db) return false;
     await db.command({ ping: 1 });
     return true;
   } catch (error) {
@@ -75,7 +101,7 @@ export async function checkConnection() {
 }
 
 // 默认的关于内容
-const defaultAbout = `
+export const defaultAbout = `
 # 👋 你好，我是相祺
 
 我是一名热爱技术的全栈开发者，专注于机器学习和数据工程，具备丰富的项目经验和实习经历。
