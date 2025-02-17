@@ -9,6 +9,8 @@ const nextConfig = {
     JWT_SECRET: process.env.JWT_SECRET || '',
     ADMIN_USERNAME: process.env.ADMIN_USERNAME || '',
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || '',
+    NEXT_WEBPACK_USEPOLLING: '1',
+    CHOKIDAR_USEPOLLING: '1'
   },
   
   // 图片配置
@@ -20,12 +22,10 @@ const nextConfig = {
   // 禁用字体优化
   optimizeFonts: false,
   
-  // 修改 webpack 配置
+  // Windows 编码配置
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // 在客户端构建中忽略这些模块
       config.resolve.fallback = {
-        ...config.resolve.fallback,
         fs: false,
         dns: false,
         net: false,
@@ -34,13 +34,6 @@ const nextConfig = {
         crypto: false,
         stream: false,
         buffer: false,
-      };
-    }
-
-    // MongoDB 可选依赖警告处理
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
         'mongodb-client-encryption': false,
         'bson-ext': false,
         'kerberos': false,
@@ -49,7 +42,6 @@ const nextConfig = {
         '@mongodb-js/zstd': false,
       };
     }
-
     return config;
   },
 

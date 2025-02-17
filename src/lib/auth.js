@@ -50,15 +50,18 @@ export async function validateUser(emailOrUsername, password) {
   const { db } = await connectToDatabase();
   
   console.log('Validating user:', { emailOrUsername }); // 添加日志
-  console.log('Admin email:', process.env.DEFAULT_ADMIN_EMAIL); // 添加日志
+  console.log('Admin credentials:', { 
+    username: process.env.ADMIN_USERNAME,
+    password: process.env.ADMIN_PASSWORD 
+  }); // 添加日志检查环境变量
   
   // 先尝试使用管理员用户名登录
-  if (emailOrUsername === process.env.DEFAULT_ADMIN_EMAIL && 
-      password === process.env.DEFAULT_ADMIN_PASSWORD) {
+  if (emailOrUsername === process.env.ADMIN_USERNAME && 
+      password === process.env.ADMIN_PASSWORD) {
     console.log('Admin login successful'); // 添加日志
     return {
       _id: 'admin',
-      email: process.env.DEFAULT_ADMIN_EMAIL,
+      email: process.env.ADMIN_USERNAME,
       name: 'Admin',
       role: ROLES.ADMIN,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=admin`,

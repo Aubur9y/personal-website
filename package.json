@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3001",
-    "dev:default": "next dev",
+    "dev": "set CHCP=65001 && next dev -p 3001",
+    "dev:default": "set CHCP=65001 && next dev",
     "build": "next build",
     "start": "next start -p 3001",
     "start:default": "next start",
@@ -34,6 +34,8 @@
     "tailwindcss": "^3.4.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.9",
+    "babel-loader": "^9.2.1",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.1.0"
   }
