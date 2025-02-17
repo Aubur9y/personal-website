@@ -175,7 +175,7 @@ export default function About({ about, resumePaths, lastUpdated }) {
 
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('language', language); // 添加语言参数
+      formData.append('language', language);
 
       const response = await fetch('/api/upload/resume', {
         method: 'POST',
@@ -189,10 +189,16 @@ export default function About({ about, resumePaths, lastUpdated }) {
       }
 
       const data = await response.json();
+      
+      // 显示成功消息
       toast.success(lang === 'zh' ? '简历上传成功' : 'Resume uploaded successfully');
       
-      // 刷新页面以显示新上传的简历
-      router.reload();
+      // 不再重新加载页面，而是直接更新状态
+      if (resumePaths) {
+        resumePaths[language] = `/api/resume/${data.filename}`;
+        // 强制组件重新渲染
+        setShowResume(prev => !prev);
+      }
     } catch (error) {
       console.error('Upload error:', error);
       toast.error(error.message || '上传失败');

@@ -1,14 +1,22 @@
 import { IncomingForm } from 'formidable';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { verifyToken } from '../../../lib/auth';
 import { connectToDatabase } from '../../../lib/db';
+import { verifyToken } from '../../../lib/auth';
+import { promises as fs } from 'fs';
+import os from 'os';
+import path from 'path';
 
 export const config = {
   api: {
     bodyParser: false,
   },
 };
+
+// 生成安全的文件名
+function getSafeFilename(originalFilename, language) {
+  const timestamp = new Date().getTime();
+  const safeFilename = `resume_${language}_${timestamp}.pdf`;
+  return safeFilename;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -22,58 +30,81 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: '未授权访问' });
     }
 
-    const form = new IncomingForm();
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        console.error('Parse form error:', err);
-        return res.status(500).json({ error: '文件上传失败' });
-      }
-
-      try {
-        const file = files.file[0];  // 获取上传的文件
-        const language = fields.language[0];  // 获取语言参数
-
-        // 验证文件类型
-        if (file.mimetype !== 'application/pdf') {
-          return res.status(400).json({ error: '只支持 PDF 文件' });
-        }
-
-        // 创建上传目录
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'resumes');
-        await fs.mkdir(uploadDir, { recursive: true });
-
-        // 生成文件名
-        const fileName = `resume_${language}.pdf`;
-        const filePath = path.join(uploadDir, fileName);
-
-        // 保存文件
-        await fs.copyFile(file.filepath, filePath);
-
-        // 更新数据库中的简历路径
-        const { db } = await connectToDatabase();
-        await db.collection('settings').updateOne(
-          { key: 'resumes' },
-          {
-            $set: {
-              [language]: `/uploads/resumes/${fileName}`,
-              updatedAt: new Date().toISOString()
-            }
-          },
-          { upsert: true }
-        );
-
-        return res.status(200).json({
-          success: true,
-          message: '简历上传成功',
-          path: `/uploads/resumes/${fileName}`
-        });
-      } catch (error) {
-        console.error('File processing error:', error);
-        return res.status(500).json({ error: '文件处理失败' });
-      }
+    // 使用系统临时目录
+    const tmpDir = os.tmpdir();
+    const form = new IncomingForm({
+      uploadDir: tmpDir,
+      keepExtensions: true,
+      maxFileSize: 5 * 1024 * 1024, // 5MB
     });
+
+    // 使用 Promise 包装 form.parse
+    const [fields, files] = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        else resolve([fields, files]);
+      });
+    });
+
+    const file = files.file[0];
+    const language = fields.language[0];
+
+    if (!file) {
+      throw new Error('没有找到文件');
+    }
+
+    // 验证文件类型
+    if (file.mimetype !== 'application/pdf') {
+      throw new Error('只支持 PDF 文件');
+    }
+
+    // 生成安全的文件名
+    const safeFilename = getSafeFilename(file.originalFilename, language);
+
+    try {
+      // 读取文件内容
+      const fileContent = await fs.readFile(file.filepath);
+      
+      // 连接数据库
+      const { db } = await connectToDatabase();
+      if (!db) {
+        throw new Error('数据库连接失败');
+      }
+
+      // 将文件内容存储到数据库
+      await db.collection('settings').updateOne(
+        { key: 'resumes' },
+        {
+          $set: {
+            [`content_${language}`]: fileContent.toString('base64'),
+            [`filename_${language}`]: safeFilename,
+            [`original_filename_${language}`]: file.originalFilename,
+            [`mimetype_${language}`]: file.mimetype,
+            [`size_${language}`]: file.size,
+            updatedAt: new Date().toISOString()
+          }
+        },
+        { upsert: true }
+      );
+
+      // 清理临时文件
+      await fs.unlink(file.filepath).catch(console.error);
+
+      return res.status(200).json({
+        success: true,
+        message: '简历上传成功',
+        filename: safeFilename
+      });
+    } catch (error) {
+      // 确保清理临时文件
+      await fs.unlink(file.filepath).catch(console.error);
+      throw error;
+    }
   } catch (error) {
-    console.error('Upload error:', error);
-    return res.status(500).json({ error: '上传失败' });
+    console.error('上传错误:', error);
+    return res.status(500).json({ 
+      error: error.message || '上传失败',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 } 
