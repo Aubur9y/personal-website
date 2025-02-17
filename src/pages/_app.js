@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { initializeAdmin } from '../lib/auth';
 import { LanguageProvider } from '../contexts/LanguageContext';
 import { AuthProvider } from '../contexts/AuthContext';
+import { Analytics } from '@vercel/analytics/react';
 
 // 只在服务器端初始化
 if (typeof window === 'undefined') {
@@ -24,6 +25,7 @@ function MyApp({ Component, pageProps }) {
       <LanguageProvider>
         <Component {...pageProps} />
         <Toaster />
+        <Analytics />
       </LanguageProvider>
     </AuthProvider>
   );
