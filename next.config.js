@@ -14,12 +14,18 @@ const nextConfig = {
   
   // 图片配置
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'api.dicebear.com'],
     unoptimized: true,
   },
 
   // 禁用字体优化
   optimizeFonts: false,
+  
+  // 构建配置
+  swcMinify: true,
+  
+  // 页面配置
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
   
   // Windows 编码配置
   webpack: (config, { isServer }) => {

@@ -15,6 +15,8 @@ const MarkdownEditor = dynamic(() => import('../../../components/MarkdownEditor'
 });
 
 export default function EditPost() {
+  const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { slug } = router.query;
   const { lang } = useLanguage();
@@ -33,11 +35,37 @@ export default function EditPost() {
   });
   const [tagInput, setTagInput] = useState('');
 
+  // 客户端挂载检查
   useEffect(() => {
-    if (slug) {
+    setIsClient(true);
+  }, []);
+
+  // 如果在服务器端或者还未确认客户端状态，返回加载状态
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center text-gray-600">
+            {lang === 'zh' ? '加载中...' : 'Loading...'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 在客户端检查权限
+  useEffect(() => {
+    if (isClient && !isAdmin) {
+      router.push('/blog');
+    }
+  }, [isClient, isAdmin, router]);
+
+  useEffect(() => {
+    if (isClient && slug) {
       fetchPost();
     }
-  }, [slug]);
+  }, [isClient, slug]);
 
   const fetchPost = async () => {
     try {
@@ -110,11 +138,6 @@ export default function EditPost() {
       toast.error(lang === 'zh' ? '更新失败' : 'Failed to update');
     }
   };
-
-  if (!isAdmin) {
-    router.push('/blog');
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">

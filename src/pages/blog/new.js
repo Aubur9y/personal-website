@@ -18,11 +18,11 @@ const MarkdownEditor = dynamic(() => import('../../components/MarkdownEditor'), 
 const REQUIRED_FIELDS = ['title', 'content'];
 
 export default function NewPost() {
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   const { lang } = useLanguage();
   const { isAdmin } = useAuth();
   const [isPreview, setIsPreview] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const [post, setPost] = useState({
     title: '',
     slug: '',
@@ -37,17 +37,30 @@ export default function NewPost() {
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState({});
 
-  // 使用 useEffect 处理客户端重定向
+  // 客户端挂载检查
   useEffect(() => {
     setIsClient(true);
-    if (!isAdmin) {
+  }, []);
+
+  // 在客户端检查权限
+  useEffect(() => {
+    if (isClient && !isAdmin) {
       router.push('/blog');
     }
-  }, [isAdmin, router]);
+  }, [isClient, isAdmin, router]);
 
-  // 如果在服务器端或者还未确认客户端状态，返回 null
+  // 如果在服务器端或者还未确认客户端状态，返回加载状态
   if (!isClient) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center text-gray-600">
+            {lang === 'zh' ? '加载中...' : 'Loading...'}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // 如果不是管理员，不渲染内容

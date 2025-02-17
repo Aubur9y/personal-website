@@ -20,8 +20,8 @@ const options = {
   maxIdleTimeMS: 60000,
   connectTimeoutMS: 10000,
   socketTimeoutMS: 45000,
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 10000,
+  heartbeatFrequencyMS: 10000,
   retryWrites: true,
   w: 'majority'
 };
@@ -38,6 +38,7 @@ export async function connectToDatabase() {
       try {
         // 测试连接是否有效
         await cachedDb.command({ ping: 1 });
+        console.log('Using cached database connection');
         return { client: cachedClient, db: cachedDb };
       } catch (error) {
         console.log('Cached connection is invalid, creating new connection...');
@@ -53,6 +54,7 @@ export async function connectToDatabase() {
     }
 
     // 创建新的连接
+    console.log('Creating new database connection...');
     const client = await MongoClient.connect(process.env.MONGODB_URI, options);
     const db = client.db(process.env.MONGODB_DB);
 
@@ -64,7 +66,7 @@ export async function connectToDatabase() {
     return { client, db };
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    throw new Error('无法连接到数据库');
+    throw new Error('无法连接到数据库: ' + error.message);
   }
 }
 
@@ -72,16 +74,16 @@ export async function connectToDatabase() {
 export async function closeConnection() {
   if (typeof window !== 'undefined') return;
 
-  try {
-    if (cachedClient) {
+  if (cachedClient) {
+    try {
       await cachedClient.close();
       cachedClient = null;
       cachedDb = null;
       console.log('Database connection closed.');
+    } catch (error) {
+      console.error('Error closing database connection:', error);
+      throw error;
     }
-  } catch (error) {
-    console.error('Error closing database connection:', error);
-    throw error;
   }
 }
 
