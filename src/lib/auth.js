@@ -13,7 +13,7 @@ export async function createUser({ email, password, name }) {
   const { db } = await connectToDatabase();
   
   // 检查是否是管理员用户名
-  if (email === process.env.DEFAULT_ADMIN_EMAIL) {
+  if (email === process.env.ADMIN_USERNAME) {
     throw new Error('此用户名已被保留');
   }
   
@@ -55,21 +55,7 @@ export async function validateUser(emailOrUsername, password) {
     password: process.env.ADMIN_PASSWORD 
   }); // 添加日志检查环境变量
   
-  // 先尝试使用管理员用户名登录
-  if (emailOrUsername === process.env.ADMIN_USERNAME && 
-      password === process.env.ADMIN_PASSWORD) {
-    console.log('Admin login successful'); // 添加日志
-    return {
-      _id: 'admin',
-      email: process.env.ADMIN_USERNAME,
-      name: 'Admin',
-      role: ROLES.ADMIN,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=admin`,
-      bio: '网站管理员'
-    };
-  }
-
-  // 如果不是管理员，则检查普通用户
+  // 查找用户（包括管理员）
   const user = await db.collection('users').findOne({
     $or: [
       { email: emailOrUsername },
@@ -77,12 +63,14 @@ export async function validateUser(emailOrUsername, password) {
     ]
   });
 
-  console.log('Found user:', user ? 'yes' : 'no'); // 添加日志
+  if (!user) {
+    console.log('User not found');
+    return null;
+  }
 
-  if (!user) return null;
-
+  // 验证密码
   const isValid = await bcrypt.compare(password, user.password);
-  console.log('Password valid:', isValid); // 添加日志
+  console.log('Password valid:', isValid);
 
   if (!isValid) return null;
 
@@ -161,7 +149,7 @@ export function removeAuthCookie() {
   Cookies.remove('auth', { path: '/' });
 }
 
-// 添加初始化函数
+// 修改初始化函数
 export async function initializeAdmin() {
   // 只在服务器端运行
   if (typeof window !== 'undefined') {
@@ -175,16 +163,37 @@ export async function initializeAdmin() {
       return;
     }
 
-    const adminExists = await db.collection('users').findOne({ role: 'admin' });
+    const adminExists = await db.collection('users').findOne({ 
+      email: process.env.ADMIN_USERNAME,
+      role: ROLES.ADMIN 
+    });
+    
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD, 10);
+      // 使用 ADMIN_PASSWORD 而不是 DEFAULT_ADMIN_PASSWORD
+      const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
       await db.collection('users').insertOne({
-        email: process.env.DEFAULT_ADMIN_EMAIL,
+        email: process.env.ADMIN_USERNAME,
+        name: 'Admin',
         password: hashedPassword,
-        role: 'admin',
+        role: ROLES.ADMIN,
         createdAt: new Date(),
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=admin`,
+        bio: '网站管理员'
       });
       console.log('管理员账号已初始化');
+    } else {
+      // 更新现有管理员密码
+      const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+      await db.collection('users').updateOne(
+        { email: process.env.ADMIN_USERNAME },
+        { 
+          $set: { 
+            password: hashedPassword,
+            updatedAt: new Date()
+          } 
+        }
+      );
+      console.log('管理员密码已更新');
     }
   } catch (error) {
     console.error('初始化管理员失败:', error);

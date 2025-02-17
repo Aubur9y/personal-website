@@ -8,7 +8,6 @@ const nextConfig = {
     MONGODB_DB: process.env.MONGODB_DB || '',
     JWT_SECRET: process.env.JWT_SECRET || '',
     ADMIN_USERNAME: process.env.ADMIN_USERNAME || '',
-    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || '',
     NEXT_WEBPACK_USEPOLLING: '1',
     CHOKIDAR_USEPOLLING: '1'
   },
