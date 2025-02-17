@@ -6,12 +6,21 @@ import 'highlight.js/styles/github-dark.css';
 // 配置 marked
 marked.setOptions({
   highlight: function(code, lang) {
-    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-    return hljs.highlight(code, { language }).value;
+    if (!lang) return code;
+    try {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, { language }).value;
+    } catch (err) {
+      console.error('Highlight error:', err);
+      return code;
+    }
   },
   langPrefix: 'hljs language-',
   gfm: true,
-  breaks: true
+  breaks: true,
+  pedantic: false,
+  smartLists: true,
+  smartypants: true
 });
 
 export default function MarkdownEditor({ value, onChange, preview = false }) {
@@ -19,14 +28,19 @@ export default function MarkdownEditor({ value, onChange, preview = false }) {
 
   useEffect(() => {
     if (value) {
-      setHtml(marked(value));
+      try {
+        setHtml(marked(value));
+      } catch (error) {
+        console.error('Markdown parsing error:', error);
+        setHtml('<p>Error parsing markdown</p>');
+      }
     }
   }, [value]);
 
   if (preview) {
     return (
       <div 
-        className="prose prose-lg max-w-none dark:prose-invert"
+        className="prose prose-lg max-w-none dark:prose-invert prose-pre:bg-gray-800 prose-pre:p-0"
         dangerouslySetInnerHTML={{ __html: html }}
       />
     );
@@ -45,9 +59,9 @@ export default function MarkdownEditor({ value, onChange, preview = false }) {
       </div>
 
       {/* 预览 */}
-      <div className="border border-gray-300 rounded-md p-4 overflow-auto">
+      <div className="border border-gray-300 rounded-md p-4 overflow-auto bg-white">
         <div 
-          className="prose prose-lg max-w-none dark:prose-invert"
+          className="prose prose-lg max-w-none dark:prose-invert prose-pre:bg-gray-800 prose-pre:p-0"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>

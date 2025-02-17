@@ -1,6 +1,5 @@
 import { connectToDatabase } from '../../../lib/db';
 import { isAdmin } from '../../../lib/auth';
-import { ObjectId } from 'mongodb';
 
 export default async function handler(req, res) {
   if (!['GET', 'PUT', 'DELETE'].includes(req.method)) {
@@ -25,16 +24,39 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
-      const { content } = req.body;
+      const updateData = req.body;
+      const oldPost = await db.collection('posts').findOne({ slug });
+      
+      if (!oldPost) {
+        return res.status(404).json({ message: '文章不存在' });
+      }
+
+      // 如果 slug 已更改，检查新 slug 是否已存在
+      if (updateData.slug !== slug) {
+        const existingPost = await db.collection('posts').findOne({ 
+          slug: updateData.slug,
+          _id: { $ne: oldPost._id }
+        });
+        
+        if (existingPost) {
+          return res.status(400).json({ message: '该链接已被使用' });
+        }
+      }
+
+      // 从更新数据中移除 _id 字段
+      const { _id, ...updateDataWithoutId } = updateData;
+
+      // 更新所有字段
       await db.collection('posts').updateOne(
         { slug },
         { 
-          $set: { 
-            content,
+          $set: {
+            ...updateDataWithoutId,
             updatedAt: new Date().toISOString()
-          } 
+          }
         }
       );
+
       return res.status(200).json({ message: '更新成功' });
     }
 
