@@ -19,6 +19,7 @@ const REQUIRED_FIELDS = ['title', 'content'];
 
 export default function NewPost() {
   const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { lang } = useLanguage();
   const { isAdmin } = useAuth();
@@ -40,9 +41,10 @@ export default function NewPost() {
   // 客户端挂载检查
   useEffect(() => {
     setIsClient(true);
+    setIsLoading(false);
   }, []);
 
-  // 在客户端检查权限
+  // 权限检查
   useEffect(() => {
     if (isClient && !isAdmin) {
       router.push('/blog');
@@ -50,7 +52,7 @@ export default function NewPost() {
   }, [isClient, isAdmin, router]);
 
   // 如果在服务器端或者还未确认客户端状态，返回加载状态
-  if (!isClient) {
+  if (!isClient || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />

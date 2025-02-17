@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { toast } from 'react-hot-toast';
@@ -35,13 +35,44 @@ export default function EditPost() {
   });
   const [tagInput, setTagInput] = useState('');
 
+  // 使用 useCallback 包装 fetchPost 函数
+  const fetchPost = useCallback(async () => {
+    if (!slug) return;
+    
+    try {
+      const response = await fetch(`/api/posts/${slug}`);
+      if (!response.ok) throw new Error('Failed to fetch post');
+      const data = await response.json();
+      setPost(data);
+    } catch (error) {
+      console.error('Fetch error:', error);
+      toast.error(lang === 'zh' ? '获取文章失败' : 'Failed to fetch post');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [slug, lang]);
+
   // 客户端挂载检查
   useEffect(() => {
     setIsClient(true);
   }, []);
 
+  // 权限检查
+  useEffect(() => {
+    if (isClient && !isAdmin) {
+      router.push('/blog');
+    }
+  }, [isClient, isAdmin, router]);
+
+  // 获取文章数据
+  useEffect(() => {
+    if (isClient && slug) {
+      fetchPost();
+    }
+  }, [isClient, slug, fetchPost]);
+
   // 如果在服务器端或者还未确认客户端状态，返回加载状态
-  if (!isClient) {
+  if (!isClient || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -54,30 +85,10 @@ export default function EditPost() {
     );
   }
 
-  // 在客户端检查权限
-  useEffect(() => {
-    if (isClient && !isAdmin) {
-      router.push('/blog');
-    }
-  }, [isClient, isAdmin, router]);
-
-  useEffect(() => {
-    if (isClient && slug) {
-      fetchPost();
-    }
-  }, [isClient, slug]);
-
-  const fetchPost = async () => {
-    try {
-      const response = await fetch(`/api/posts/${slug}`);
-      if (!response.ok) throw new Error('Failed to fetch post');
-      const data = await response.json();
-      setPost(data);
-    } catch (error) {
-      console.error('Fetch error:', error);
-      toast.error(lang === 'zh' ? '获取文章失败' : 'Failed to fetch post');
-    }
-  };
+  // 如果不是管理员，不渲染内容
+  if (!isAdmin) {
+    return null;
+  }
 
   // 生成 slug
   const generateSlug = (title) => {
