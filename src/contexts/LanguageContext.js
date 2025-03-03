@@ -14,15 +14,26 @@ export function LanguageProvider({ children }) {
     try {
       // 只在客户端执行
       if (typeof window !== 'undefined') {
-        const sessionLang = sessionStorage.getItem('language');
-        if (sessionLang) {
-          setLang(sessionLang);
+        // 首先检查 localStorage
+        const localLang = localStorage.getItem('language');
+        if (localLang) {
+          setLang(localLang);
         } else {
-          sessionStorage.setItem('language', 'en');
+          // 如果 localStorage 中没有，再检查 sessionStorage
+          const sessionLang = sessionStorage.getItem('language');
+          if (sessionLang) {
+            setLang(sessionLang);
+            // 同步到 localStorage
+            localStorage.setItem('language', sessionLang);
+          } else {
+            // 设置默认语言
+            sessionStorage.setItem('language', 'en');
+            localStorage.setItem('language', 'en');
+          }
         }
       }
     } catch (error) {
-      console.error('Error accessing sessionStorage:', error);
+      console.error('Error accessing storage:', error);
     } finally {
       setIsLoading(false);
     }
@@ -34,6 +45,8 @@ export function LanguageProvider({ children }) {
     try {
       setLang(newLang);
       if (typeof window !== 'undefined') {
+        // 同时更新 localStorage 和 sessionStorage
+        localStorage.setItem('language', newLang);
         sessionStorage.setItem('language', newLang);
       }
     } catch (error) {
