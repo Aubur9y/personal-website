@@ -219,7 +219,7 @@ export default function EditPost() {
                 <label className="block text-sm font-medium text-gray-700">
                   {lang === 'zh' ? '摘要' : 'Excerpt'}
                 </label>
-                <textarea
+              <textarea
                   value={post.excerpt}
                   onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
                   rows="3"
@@ -323,28 +323,28 @@ export default function EditPost() {
                   value={post.content}
                   onChange={(value) => setPost(prev => ({ ...prev, content: value }))}
                   preview={isPreview}
-                />
-              </div>
+              />
+            </div>
 
               {/* 按钮组 */}
-              <div className="flex justify-end gap-4">
-                <button
-                  type="button"
+            <div className="flex justify-end gap-4">
+              <button
+                type="button"
                   onClick={() => router.push('/blog')}
                   className="px-4 py-2 text-gray-700 hover:text-gray-900"
-                >
+              >
                   {lang === 'zh' ? '取消' : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
+              </button>
+              <button
+                type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
+              >
                   {lang === 'zh' ? '保存' : 'Save'}
-                </button>
-              </div>
-            </form>
-          </div>
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
       </main>
     </div>
   );
