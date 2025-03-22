@@ -302,13 +302,13 @@ export default function About({ about, resumePaths, lastUpdated }) {
                     Python
                   </span>
                   <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                    JavaScript
+                    {lang === 'zh' ? 'Java' : 'Java'}
                   </span>
                   <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
                     {lang === 'zh' ? '机器学习' : 'Machine Learning'}
                   </span>
                   <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-                    {lang === 'zh' ? '数据工程' : 'Data Engineering'}
+                    {lang === 'zh' ? '数据科学' : 'Data Science'}
                   </span>
                 </div>
               </div>

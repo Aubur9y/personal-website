@@ -23,7 +23,7 @@ export default {
     hero: {
       title: '你好，我是相祺',
       subtitle: '计算机科学学生 & 技术爱好者',
-      description: '专注全栈开发，热衷探索人工智能与前沿科技'
+      description: '专注于人工智能、数据科学与机器学习中的前沿技术'
     },
     sections: {
       recentPosts: '最新文章',
@@ -56,7 +56,7 @@ export default {
     },
     intro: {
       title: '计算机科学学生 & 技术爱好者',
-      description: '我是一名计算机科学专业的学生，对人工智能和前沿科技充满热情。专注于全栈开发，同时积极探索机器学习和数据科学领域。'
+      description: '我是一名计算机科学专业的学生，对人工智能和前沿科技充满热情。'
     }
   },
   projects: {
@@ -95,7 +95,7 @@ export default {
   about: {
     pageTitle: '关于我 | 我的个人网站',
     pageDescription: '了解更多关于我的信息',
-    role: '全栈开发者 | 机器学习工程师 | 数据科学爱好者',
+    role: '人工智能 | 机器学习 | 数据科学',
     viewResume: '查看简历',
     downloadResume: '下载简历',
     uploadResume: '上传简历'

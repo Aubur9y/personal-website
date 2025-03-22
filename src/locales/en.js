@@ -23,7 +23,7 @@ export default {
     hero: {
       title: "Hi, I'm Qi Xiang",
       subtitle: "Computer Science Student & Tech Enthusiast",
-      description: "Focused on full-stack development while exploring AI and emerging technologies"
+      description: "Focused on emerging technologies in AI, Data Science and Machine Learning"
     },
     sections: {
       recentPosts: 'Recent Posts',
@@ -56,7 +56,7 @@ export default {
     },
     intro: {
       title: 'Computer Science Student & Tech Enthusiast',
-      description: 'I am a Computer Science student passionate about AI and emerging technologies. Focused on full-stack development while actively exploring machine learning and data science.'
+      description: 'I am a Computer Science student passionate about AI and emerging technologies.'
     }
   },
   projects: {
