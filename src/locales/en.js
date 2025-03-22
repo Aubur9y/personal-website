@@ -84,7 +84,7 @@ export default {
   about: {
     pageTitle: 'About Me | My Personal Website',
     pageDescription: 'Learn more about me and my work',
-    role: 'Full Stack Developer | ML Engineer | Data Science Enthusiast',
+    role: 'Artificial Intelligence | Machine Learning | Data Science',
     viewResume: 'View Resume',
     downloadResume: 'Download Resume',
     uploadResume: 'Upload Resume',
